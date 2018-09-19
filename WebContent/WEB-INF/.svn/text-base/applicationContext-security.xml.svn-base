@@ -1,0 +1,125 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security" xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:sec="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+                        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-2.0.4.xsd">
+
+	<sec:global-method-security secured-annotations="enabled" jsr250-annotations="disabled" access-decision-manager-ref="accessDecisionManager" />
+
+	
+	<beans:bean id="accessDecisionManager" class="org.springframework.security.vote.AffirmativeBased">
+		<beans:property name="decisionVoters">
+			<beans:list>
+				<beans:ref bean="iitaDataLoadCheck" />
+				<beans:ref bean="iitaRoleVoter" />
+				<beans:bean class="org.springframework.security.vote.RoleVoter" />
+				<beans:bean class="org.springframework.security.vote.AuthenticatedVoter" />
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+
+	<beans:bean id="iitaRoleVoter" class="org.iita.security.IITARoleVoter" />
+	<beans:bean id="iitaDataLoadCheck" class="org.iita.security.DataLoadCheck">
+		<sec:custom-after-invocation-provider />
+	</beans:bean>
+
+	<http auto-config="false" session-fixation-protection="migrateSession" access-denied-page="/accessdenied.jspx" once-per-request="false">
+		<intercept-url pattern="/login.*" filters="none" />
+		<intercept-url pattern="/google*.html" filters="none" />
+		<intercept-url pattern="/robots.txt" filters="none" />
+		<intercept-url pattern="/favicon.*" filters="none" />
+		<intercept-url pattern="/application-locked.*" filters="none" />
+		<intercept-url pattern="/remind/**" filters="none" access="ROLE_ANONYMOUS" />
+		<intercept-url pattern="/script/**" filters="none" access="ROLE_ANONYMOUS,ROLE_USER" />
+		<intercept-url pattern="/css/**" filters="none" access="ROLE_ANONYMOUS,ROLE_USER" />
+		<intercept-url pattern="/img/**" filters="none" access="ROLE_ANONYMOUS,ROLE_USER" />
+
+		<!-- ADMIN -->
+		<intercept-url pattern="/admin/**" access="ROLE_ADMIN" />
+		<intercept-url pattern="/help/admin/**" access="ROLE_ADMIN" />
+
+		<!-- DEFAULT -->
+		<intercept-url pattern="/**" filters="none" />
+		<!-- Uncomment this to require access on all URLs -->
+		<!-- <intercept-url pattern="/**" access="ROLE_USER" /> -->
+
+		<form-login login-page="/login.jspx" default-target-url="/" authentication-failure-url="/login.jspx?login_error=1" />
+		<logout logout-success-url="/" />
+		<remember-me key="sdfsdfsdfsdfsd" />
+		<anonymous key="sdfsdfsdfsdfsd" granted-authority="ROLE_ANONYMOUS" username="Anonymous Coward" />
+	</http>
+
+	<sec:authentication-manager alias="authenticationManager" />
+
+	<beans:bean id="ldapUserService" class="org.iita.security.service.impl.LDAPUserService">
+		<beans:property name="ldapHost" value="${auth.ldap.uri}" />
+		<beans:property name="username" value="${auth.ldap.username}" />
+		<beans:property name="password" value="${auth.ldap.password}" />
+	</beans:bean>
+
+<!-- 
+	<beans:bean class="org.iita.security.kerberos.KerberosProcessingFilter">
+		<beans:property name="authenticationManager" ref="authenticationManager" />
+		<sec:custom-filter position="PRE_AUTH_FILTER" />
+		<beans:property name="realm" value="${krb5.domain}" />
+		<beans:property name="principal" value="${krb5.principal}" />
+		<beans:property name="password" value="${krb5.password}" />
+		<beans:property name="jaasConfigSection" value="${krb5.jaasConfigSection}" />
+	</beans:bean>
+-->
+
+	<beans:bean id="iitaAuthenticationProvider" class="org.iita.security.IitaAuthentication">
+		<beans:constructor-arg ref="userService" />
+		<beans:property name="ldapAuthenticationService" ref="ldapUserService" />
+		<beans:property name="automaticImportAllowed" value="${auth.automaticImport}" />
+		<custom-authentication-provider />
+	</beans:bean>
+
+	<beans:bean id="userService" class="org.iita.security.service.impl.UserServiceImpl">
+		<beans:property name="userImportService" ref="ldapUserService" />
+		<beans:property name="application" value="${application.securityId}" />
+		<beans:property name="additionalRoles" value="${application.additionalRoles}" />
+	</beans:bean>
+	<beans:bean id="userRoleService" class="org.iita.security.service.impl.UserRoleServiceImpl" />
+	<beans:bean id="userLookupService" class="org.iita.security.service.impl.UserLookupServiceImpl" />
+	<beans:bean id="userSupervisionService" class="org.iita.security.service.impl.UserSupervisionServiceImpl">
+		<beans:property name="application" value="${application.securityId}" />
+	</beans:bean>
+
+	<beans:bean id="userAction" scope="prototype" class="org.iita.security.action.UserAction">
+		<beans:constructor-arg ref="userService" />
+		<beans:property name="roleService" ref="userRoleService" />
+		<beans:property name="lookupService" ref="userLookupService" />
+		<beans:property name="application" value="${application.securityId}" />
+	</beans:bean>
+	<beans:bean id="userRolesAction" scope="request" class="org.iita.security.action.UserRolesAction">
+		<beans:constructor-arg ref="userService" />
+	</beans:bean>
+	<beans:bean id="changePasswordAction" scope="prototype" class="org.iita.security.action.ChangePasswordAction">
+		<beans:constructor-arg ref="userService" />
+	</beans:bean>
+	<beans:bean id="userPasswordSettingAction" scope="request" class="org.iita.security.action.UserPasswordSettingAction">
+		<beans:constructor-arg ref="userService" />
+		<beans:constructor-arg ref="ldapUserService" />
+	</beans:bean>
+	<beans:bean id="delegationAction" scope="prototype" class="org.iita.security.action.DelegationAction">
+		<beans:constructor-arg ref="userService" />
+	</beans:bean>
+	<beans:bean id="userRemindUsernameAction" scope="prototype" class="org.iita.security.action.UserRemindUsername">
+		<beans:constructor-arg ref="userService" />
+	</beans:bean>
+	<beans:bean id="userPasswordAction" scope="prototype" class="org.iita.security.action.UserProfileAction">
+		<beans:constructor-arg ref="userService" />
+		<beans:property name="templatingService" ref="templatingService" />
+		<beans:property name="emailService" ref="emailService" />
+	</beans:bean>
+	<beans:bean id="userPreferencesAction" scope="request" class="org.iita.security.action.UserPreferencesAction">
+		<beans:constructor-arg ref="userService" />
+	</beans:bean>
+	<beans:bean id="userInfoAction" scope="request" class="org.iita.security.action.UserInfoAction">
+		<beans:constructor-arg ref="userService" />
+	</beans:bean>
+	<beans:bean id="userSupervisionAction" scope="request" class="org.iita.security.action.UserSupervisionAction">
+		<beans:constructor-arg ref="userService" />
+		<beans:constructor-arg ref="userSupervisionService" />
+	</beans:bean>
+</beans:beans>

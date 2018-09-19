@@ -1,0 +1,32 @@
+<html>
+<head>
+<title>User management</title>
+</head>
+<body>
+<h1>User management</h1>
+<p>User management section of Administrative pages allows administrators to add, remove and manage users of the application. User's <a href="user.html">properties</a>
+describe the user in more detail.</p>
+<p class="help-img"><img src="../img/user-list.png" /> Administrative listing of application users</p>
+<p><b>Note:</b> The user list may be paginated. Use page navigation above the listing to access other pages. Or use Search.</p>
+
+<div id="search">
+<h3>User search</h3>
+<div id="quicksearch">
+<p>As your application grows, finding the appropriate user record in the database becomes a difficult job.</p>
+<p>When a matching user is not found in local database, the system will connect to Active Directory and execute your search query there. If a matching user
+is found in Active Directory, user's data will be loaded into a <b>New user form</b> which allows you to import new users.</p>
+
+<div>
+<h4>Quick search</h4>
+<p id="users_filter">Enter user's user name or email addres into the provided input field. Press &lt;Enter&gt; key to execute search.</p>
+</div>
+
+<div>
+<h4>Search LDAP</h4>
+<p id="users_extensiveSearch">Tick the <b>Ldap?</b> checkbox to force search in Active Directory server. Local database will not be searched.</p>
+</div>
+</div>
+</div>
+
+</body>
+</html>

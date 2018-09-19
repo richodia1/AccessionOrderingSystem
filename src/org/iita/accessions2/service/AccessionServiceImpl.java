@@ -1,0 +1,447 @@
+/**
+ * accession2.Struts Jan 19, 2010
+ */
+package org.iita.accessions2.service;
+
+import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.iita.accessions2.model.Accession;
+import org.iita.accessions2.model.Collection;
+import org.iita.accessions2.model.ColumnDescription;
+import org.iita.accessions2.model.ordering.Request;
+import org.iita.accessions2.service.Filters.DisplayColumn;
+import org.iita.accessions2.service.Filters.Filter;
+import org.iita.accessions2.service.Filters.FilterRangeValue;
+import org.iita.security.Authorize;
+import org.iita.struts.webfile.ServerFile;
+import org.iita.util.PagedResult;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * @author mobreza
+ * 
+ */
+public class AccessionServiceImpl implements AccessionService {
+	static final Log LOG = LogFactory.getLog(AccessionServiceImpl.class);
+	private EntityManager entityManager;
+	private File accessionImageDirectory;
+
+	/**
+	 * @param accessionImageDirectory the accessionImageDirectory to set
+	 */
+	public void setAccessionImageDirectory(String accessionImageDirectory) {
+		this.accessionImageDirectory = new File(accessionImageDirectory);
+		if (!this.accessionImageDirectory.exists()) {
+			LOG.warn("Accession image directory does not exist: " + this.accessionImageDirectory);
+			this.accessionImageDirectory.mkdirs();
+		}
+	}
+
+	/**
+	 * @param entityManager the entityManager to set
+	 */
+	@PersistenceContext
+	public void setEntityManager(EntityManager entityManager) {
+		this.entityManager = entityManager;
+	}
+
+	/**
+	 * @see org.iita.accessions2.service.AccessionService#find(java.lang.Long)
+	 */
+	@Override
+	@Transactional
+	public Accession find(Long accessionId) {
+		return this.entityManager.find(Accession.class, accessionId);
+	}
+
+	/**
+	 * @see org.iita.accessions2.service.AccessionService#find(java.lang.String)
+	 */
+	@Override
+	@Transactional
+	public Accession find(String accessionName) {
+		try {
+			return (Accession) this.entityManager.createQuery("from Accession a where a.name=:name").setParameter("name", accessionName).getSingleResult();
+		} catch (NoResultException e) {
+			LOG.error("No accession with name: " + accessionName);
+			return null;
+		}
+	}
+
+	/**
+	 * @see org.iita.accessions2.service.AccessionService#list(int, int)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public PagedResult<Accession> list(int startAt, int maxResults) {
+		PagedResult<Accession> paged = new PagedResult<Accession>(startAt, maxResults);
+		paged.setResults(this.entityManager.createQuery("from Accession a order by a.name").setFirstResult(startAt).setMaxResults(maxResults).getResultList());
+		if (paged.getResults().size() > 0)
+			paged.setTotalHits(((Long) this.entityManager.createQuery("select count(a) from Accession a").getSingleResult()).longValue());
+		return paged;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public PagedResult<Accession> list(Filters filters, int startAt, int maxResults) {
+		PagedResult<Accession> paged = new PagedResult<Accession>(startAt, maxResults);
+
+		// depending on distinct tables in filters, a native query is constructed that will filter out values
+		// a filter (as in old application) allows for: table.field = [ set, of, values ] where OR operator
+		// is applied. AND operator is applied between individual filters
+
+		// distinct tables, then distinct columns (careful about SQL injectons!)
+
+		List<Object> parameters = new ArrayList<Object>();
+
+		String nativeQuery = buildNativeQuery(filters, parameters, null);
+
+		// Total count
+		long totalHits = 0;
+		Query query = this.entityManager.createNativeQuery("select count(a.id) " + nativeQuery);
+		int paramPos = 1;
+		for (Object parameter : parameters) {
+			query.setParameter(paramPos++, parameter);
+		}
+		totalHits = ((BigInteger) query.getSingleResult()).longValue();
+		LOG.info("Total hits: " + totalHits);
+
+		// Accessions
+		query = this.entityManager.createNativeQuery("select a.* " + nativeQuery, Accession.class);
+		paramPos = 1;
+		for (Object parameter : parameters) {
+			query.setParameter(paramPos++, parameter);
+		}
+		query.setFirstResult(startAt).setMaxResults(maxResults);
+		paged.setResults(query.getResultList());
+
+		paged.setTotalHits(totalHits);
+		return paged;
+	}
+
+	/**
+	 * Returns raw data from database based on data filters and display filters
+	 * 
+	 * @see org.iita.accessions2.service.AccessionService#listFiltered(org.iita.accessions2.service.Filters, int, int)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public PagedResult<Object[]> listFiltered(Filters filters, int startAt, int maxResults) {
+		PagedResult<Object[]> paged = new PagedResult<Object[]>(startAt, maxResults);
+
+		// depending on distinct tables in filters, a native query is constructed that will filter out values
+		// a filter (as in old application) allows for: table.field = [ set, of, values ] where OR operator
+		// is applied. AND operator is applied between individual filters
+
+		// distinct tables, then distinct columns (careful about SQL injectons!)
+
+		List<Object> parameters = new ArrayList<Object>();
+
+		String nativeQuery = buildNativeQuery(filters, parameters, null);
+
+		// Total count
+		long totalHits = 0;
+		Query query = this.entityManager.createNativeQuery("select count(a.id) " + nativeQuery);
+		int paramPos = 1;
+		for (Object parameter : parameters) {
+			query.setParameter(paramPos++, parameter);
+		}
+		totalHits = ((BigInteger) query.getSingleResult()).longValue();
+		LOG.info("Total hits: " + totalHits);
+
+		StringBuilder extraColumns = new StringBuilder();
+		for (DisplayColumn displayColumn : filters.getDisplayColumns()) {
+			ColumnDescription cd = this.entityManager.find(ColumnDescription.class, displayColumn.getColumnDescriptionId());
+			extraColumns.append(", ");
+			String tableName = cd.getExperiment().getTableName();
+			if (tableName.equalsIgnoreCase("Accession"))
+				tableName = "a";
+			extraColumns.append(tableName).append(".").append(cd.getColumn());
+		}
+
+		LOG.debug("Extra columns:  " + extraColumns.toString());
+
+		// Accessions
+		query = this.entityManager.createNativeQuery("select a.id, a.accessionName, a.genus, a.species" + extraColumns.toString() + nativeQuery);
+		paramPos = 1;
+		for (Object parameter : parameters) {
+			query.setParameter(paramPos++, parameter);
+		}
+		query.setFirstResult(startAt).setMaxResults(maxResults);
+		paged.setResults(query.getResultList());
+
+		paged.setTotalHits(totalHits);
+		return paged;
+	}
+
+	/**
+	 * @see org.iita.accessions2.service.AccessionService#listImages(org.iita.accessions2.model.Accession)
+	 */
+	@Override
+	public List<ServerFile> listImages(final Accession accession) {
+		if (accession == null)
+			return null;
+
+		LOG.info("Listing images for " + accession.getName() + " from " + this.accessionImageDirectory);
+
+		try {
+			return ServerFile.getServerFiles(accessionImageDirectory, String.format("%1$s%2$s%3$s", accession.getCollection().getShortName().toLowerCase(),
+					File.separator, accession.getName()));
+		} catch (Throwable e) {
+			LOG.error(e, e);
+			return null;
+		}
+	}
+
+	/**
+	 * @see org.iita.accessions2.service.FilterService#countMatching(org.iita.accessions2.model.Coding)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public Map<Object, Long> countMatching(Filters filters, ColumnDescription column) {
+		// skip if no column provided
+		if (column == null)
+			return new HashMap<Object, Long>();
+
+		// For coded columns, get Histogram
+		if (column.isCoded())
+			return countMatchingHistogram(filters, column);
+
+		// For booleans, get histogram
+		if (column.getDataClass() == Boolean.class)
+			return countMatchingHistogram(filters, column);
+
+		// default
+		return new HashMap<Object, Long>();
+	}
+
+	@SuppressWarnings("unchecked")
+	private Map<Object, Long> countMatchingHistogram(Filters filters, ColumnDescription column) {
+		Map<Object, Long> map = new HashMap<Object, Long>();
+		List<Object> parameters = new ArrayList<Object>();
+		String nativeQuery = buildNativeQuery(filters, parameters, new ColumnDescription[] { column });
+
+		String fullColumnName = column.getExperiment().getTableName() + "." + column.getColumn();
+
+		// override alias used in query
+		if (column.getExperiment().getTableName().equalsIgnoreCase("Accession"))
+			fullColumnName = "a." + column.getColumn();
+
+		LOG.debug("Checking matches at: " + fullColumnName);
+		LOG.debug("SQL: " + "select " + fullColumnName + ", count(a.id) " + nativeQuery + " group by " + fullColumnName);
+		Query query = this.entityManager.createNativeQuery("select " + fullColumnName + ", count(a.id) " + nativeQuery + " group by " + fullColumnName);
+		int paramPos = 1;
+		for (Object parameter : parameters) {
+			query.setParameter(paramPos++, parameter);
+		}
+		for (Object[] row : (List<Object[]>) query.getResultList()) {
+			LOG.debug("Types: " + (row[0] == null ? "null" : row[0].getClass().getName()) + " and " + (row[1] == null ? "null" : row[1].getClass().getName()));
+			String key = row[0] == null ? "null" : row[0].toString();
+			Long value = ((BigInteger) row[1]).longValue();
+			map.put(key, value);
+		}
+
+		LOG.info("Done calculating histogram.");
+		return map;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public long countMatching(Filters filters) {
+		List<Object> parameters = new ArrayList<Object>();
+		String nativeQuery = buildNativeQuery(filters, parameters, null);
+
+		// Total count
+		long totalHits = 0;
+		Query query = this.entityManager.createNativeQuery("select count(a.id) " + nativeQuery);
+		int paramPos = 1;
+		for (Object parameter : parameters) {
+			query.setParameter(paramPos++, parameter);
+		}
+		totalHits = ((BigInteger) query.getSingleResult()).longValue();
+		LOG.info("Total hits: " + totalHits);
+		return totalHits;
+	}
+
+	/**
+	 * Build Native SQL query
+	 * 
+	 * @param filters
+	 * @param parameters
+	 * @param excludedColumns
+	 * @return
+	 */
+	private String buildNativeQuery(Filters filters, List<Object> parameters, ColumnDescription[] excludedColumns) {
+		if (parameters == null) {
+			LOG.error("Must pass in a non-null empty List<Object> as argument 2 to contain query parameters");
+			throw new RuntimeException("Must pass in a non-null empty List<Object> as argument 2 to contain query parameters");
+		}
+
+		StringBuffer sb = new StringBuffer();
+		sb.append(" from Accession a ");
+		List<String> distinctTables = filters.getDistinctTables();
+		// tables not included in filtering, but needed for display
+		List<String> extraTables = filters.getExtraTables();
+
+		if (excludedColumns != null)
+			for (ColumnDescription excludedColumn : excludedColumns) {
+				LOG.debug("Excluding column: " + excludedColumn);
+				if (!distinctTables.contains(excludedColumn.getExperiment().getTableName()))
+					distinctTables.add(excludedColumn.getExperiment().getTableName());
+			}
+
+		for (String tableName : distinctTables) {
+			if (tableName.equals("Accession"))
+				// skip Accessions table
+				continue;
+
+			sb.append(" inner join ").append(tableName).append(" on a.id=").append(tableName).append(".accession_id");
+			List<Filter> tableFilters = filters.getFilters(tableName);
+			if (tableFilters.size() > 0) {
+				for (Filter filter : tableFilters) {
+					if (isColumnExcluded(filter.getTableName(), filter.getColumn(), excludedColumns)) {
+						LOG.info("Filter " + filter.getTableName() + "." + filter.getColumn() + " is excluded");
+						continue;
+					}
+					sb.append(" and (");
+					int i = 0;
+					for (Object value : filter.getFilterValues()) {
+						if (i++ > 0)
+							sb.append(" or ");
+						if (value instanceof FilterRangeValue) {
+							FilterRangeValue rangeValue = (FilterRangeValue) value;
+							if (rangeValue.hasBoth())
+								sb.append("(");
+							if (rangeValue.getMinValue() != null) {
+								sb.append(tableName).append(".").append(filter.getColumn()).append(">=?");
+								parameters.add(rangeValue.getMinValue());
+							}
+							if (rangeValue.hasBoth())
+								sb.append(" and ");
+							if (rangeValue.getMaxValue() != null) {
+								sb.append(tableName).append(".").append(filter.getColumn()).append("<=?");
+								parameters.add(rangeValue.getMaxValue());
+							}
+							if (rangeValue.hasBoth())
+								sb.append(")");
+						} else {
+							if (value != null) {
+								sb.append(tableName).append(".").append(filter.getColumn()).append("=?");
+								parameters.add(value);
+							} else {
+								sb.append(tableName).append(".").append(filter.getColumn()).append(" is null");
+							}
+						}
+					}
+					sb.append(")");
+				}
+			}
+		}
+		
+		for (String tableName : extraTables) {
+			// skip Accessions table and  used tables
+			if (tableName.equals("Accession") || distinctTables.contains(tableName))
+				continue;
+
+			sb.append(" left outer join ").append(tableName).append(" on a.id=").append(tableName).append(".accession_id");
+		}
+
+		LOG.debug(sb.toString());
+
+		List<Filter> tableFilters = filters.getFilters("Accession");
+		if (tableFilters.size() > 0) {
+			int j = 0;
+			for (Filter filter : tableFilters) {
+				if (isColumnExcluded(filter.getTableName(), filter.getColumn(), excludedColumns)) {
+					LOG.info("Filter " + filter.getTableName() + "." + filter.getColumn() + " is excluded");
+					continue;
+				}
+
+				if (j++ == 0)
+					sb.append(" where (");
+				else
+					sb.append(" and (");
+				int i = 0;
+				for (Object value : filter.getFilterValues()) {
+					if (i++ > 0)
+						sb.append(" or ");
+					if (value == null)
+						sb.append("a.").append(filter.getColumn()).append(" is null");
+					else if (value instanceof FilterRangeValue) {
+						FilterRangeValue rangeValue = (FilterRangeValue) value;
+						if (rangeValue.hasBoth())
+							sb.append("(");
+						if (rangeValue.getMinValue() != null) {
+							sb.append("a.").append(filter.getColumn()).append(">=?");
+							parameters.add(rangeValue.getMinValue());
+						}
+						if (rangeValue.hasBoth())
+							sb.append(" and ");
+						if (rangeValue.getMaxValue() != null) {
+							sb.append("a.").append(filter.getColumn()).append("<=?");
+							parameters.add(rangeValue.getMaxValue());
+						}
+						if (rangeValue.hasBoth())
+							sb.append(")");
+					} else {
+						if (value != null) {
+							sb.append("a.").append(filter.getColumn()).append("=?");
+							parameters.add(value);
+						} else {
+							sb.append("a.").append(filter.getColumn()).append(" is null");
+						}
+					}
+				}
+				sb.append(")");
+			}
+		}
+
+		LOG.debug("Filter query: " + sb.toString());
+		return sb.toString();
+	}
+
+	/**
+	 * @param tableName
+	 * @param column
+	 * @param excludedColumns
+	 * @return
+	 */
+	private boolean isColumnExcluded(String tableName, String column, ColumnDescription[] excludedColumns) {
+		// no columns excluded
+		if (excludedColumns == null)
+			return false;
+
+		// check if excluded column matches the list
+		for (ColumnDescription excludedColumn : excludedColumns) {
+			if (excludedColumn.getColumn().equals(column) && excludedColumn.getExperiment().getTableName().equals(tableName))
+				return true;
+		}
+
+		// no match found in excluded list, not excluded
+		return false;
+	}
+	
+	@Override
+	public PagedResult<Object[]> listOrderVariation(int startAt, int maxResults) {
+		PagedResult<Object[]> paged = new PagedResult<Object[]>(startAt, maxResults);
+		paged.setResults(this.entityManager.createQuery("select distinct i.item.name, sum(i.quantity) as total from Request r left outer join r.items i group by i.item.name order by sum(i.quantity) desc").setFirstResult(startAt).setMaxResults(maxResults)
+				.getResultList());
+		if (paged.getResults().size() > 0)
+			paged.setTotalHits(((Long) this.entityManager.createQuery("select count(i.item.name) from Request r left outer join r.items i group by i.item.name").getSingleResult()).longValue());
+
+		return paged;
+	}
+}

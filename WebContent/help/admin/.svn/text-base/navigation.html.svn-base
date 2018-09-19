@@ -1,0 +1,23 @@
+<html>
+<head>
+<title>Navigation</title>
+</head>
+<body>
+<h1>Navigating Administrative console</h1>
+<p>Once you are in the scope of Administrative console (<code>/admin/</code> pages) the top-level menu lists most important tools for Administrators. The <b>Public
+site</b> link will bring you back to the application and leave Administrative console. Clicking the logo within the console will open up Administrator's <b>Dashboard</b>.</p>
+
+
+<h2>Dashboard</h2>
+<p>Dashboard gives you access to other Administrative tasks:</p>
+<ul>
+	<li><a href="tools/scheduler.html">Scheduled jobs</a></li>
+	<li><a href="tools/lucene.html">Lucene reindex</a></li>
+	<li><a href="tools/block-access.html">Block access to application</a></li>
+	<li><a href="tools/jre-status.html">JRE status</a></li>
+</ul>
+
+<h2>User impersonation</h2>
+<p>In the top right corner you will find the <b>Fast user switch</b> applet. Read <a href="users/switching.html">more about switching</a> to other users.</p>
+</body>
+</html>

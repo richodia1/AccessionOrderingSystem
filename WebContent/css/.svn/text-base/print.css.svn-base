@@ -1,0 +1,7 @@
+@CHARSET "UTF-8";
+.noprint { display: none; }
+.printonly { display: inherit; }
+
+body {
+	font-size: 0.7em;
+}

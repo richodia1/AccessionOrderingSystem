@@ -1,0 +1,45 @@
+<html>
+<head>
+<title>Help</title>
+<script type="text/javascript" src="../script/help.js"></script>
+<script type="text/javascript">
+Event.observe(window, "load", function() {
+	// provide base href to help content
+	IITAHELP = new IITA.Help("/stub/help/content/");
+});
+</script>
+</head>
+<body>
+<p>Welcome to PROJECT!</p>
+<p>You could use the <a href="quick.html" iita:helptoc="guide/menu#quick">Quick quide</a> to get introduced to the system or browse the topics.</p>
+<div iita:helptoc="index#something">
+<h2>Hello</h2>
+<table class="inputform">
+<tr><td>Field:</td><td><input type="text" /></td></tr>
+<tr><td>Field:</td><td><input type="text" /></td></tr>
+<tr iita:helptoc="index#something1"><td>Field:</td><td><input type="text" /></td></tr>
+<tr iita:helptoc="index#something2"><td>Field:</td><td><input type="text" /></td></tr>
+<tr iita:helptoc="index#something3"><td>Field:</td><td><input type="text" /></td></tr>
+<tr iita:helptoc="test/me#somethingelse"><td>Field:</td><td><input type="text" /></td></tr>
+</table>
+</div>
+<p>And now for some help content</p>
+<div  id="something">
+<h2>Help contents</h2>
+<p>This is an interesting bit</p>
+</div>
+<div  id="something1">
+<h2>Help contents 1</h3>
+<p>This is an interesting bit fo</p>
+</div>
+<div  id="something2">
+<h3>Help contents 2</h3>
+<p>This is an interesting bit</p>
+</div>
+<div  id="something3">
+<h3>Help contents 3</h3>
+<p>This is an interesting bit thatr has a lot of information that you'd need about this form field.</p>
+</div>
+
+</body>
+</html>

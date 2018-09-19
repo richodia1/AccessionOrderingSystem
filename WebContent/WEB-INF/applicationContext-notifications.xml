@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util" xmlns:amq="http://activemq.apache.org/schema/core"
+	xmlns:jms="http://www.springframework.org/schema/jms"
+	xsi:schemaLocation="
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+    http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+    http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
+    http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd 
+    http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms-2.5.xsd"
+	default-autowire="no">
+
+
+	<!-- Local user notification service -->
+	<!-- Use local notification service if  -->
+	<!--
+		<bean id="userNotificationService" class="org.iita.service.impl.UserNotificationServiceImpl"> <property name="emailService" ref="emailService" /> </bean>
+	-->
+
+	<!-- or JMS notification service -->
+	<bean id="jmsConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+		<property name="connectionFactory">
+			<bean class="org.springframework.jms.connection.UserCredentialsConnectionFactoryAdapter">
+				<property name="targetConnectionFactory">
+					<bean class="org.apache.activemq.ActiveMQConnectionFactory">
+						<property name="brokerURL">
+							<value>${notifications.jms.broker.url}</value>
+						</property>
+					</bean>
+				</property>
+				<property name="username" value="${notifications.jms.broker.username}" />
+				<property name="password" value="${notifications.jms.broker.password}" />
+			</bean>
+		</property>
+		<property name="idleTimeout" value="5000" />
+	</bean>
+
+	<amq:queue id="jmsNotificationsDestination" physicalName="${notifications.jms.queue.outgoing}" />
+
+	<bean id="notificationSender" class="org.iita.notifications.JMSNotificationSender">
+		<constructor-arg value="${application.securityId}" />
+		<property name="destination" ref="jmsNotificationsDestination" />
+		<property name="template">
+			<bean class="org.springframework.jms.core.JmsTemplate">
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+				<property name="receiveTimeout" value="1000" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="userNotificationService" class="org.iita.notifications.IITANotificationService">
+		<constructor-arg ref="notificationSender" />
+	</bean>
+
+	<!-- Subscriptions and Actions -->
+	<!-- This bit is the same for all types of notification services -->
+	<bean id="notificationSubscriptionService" class="org.iita.service.impl.NotificationSubscriptionServiceImpl">
+		<constructor-arg value="${notifications.class}" />
+	</bean>
+	<bean id="notificationSubscriptionAction" class="org.iita.struts.action.NotificationSubscriptionAction" scope="request">
+		<constructor-arg ref="notificationSubscriptionService" />
+	</bean>
+	<bean id="notificationAction" class="org.iita.struts.NotificationAction" scope="request">
+		<property name="notificationService" ref="userNotificationService" />
+		<property name="userService" ref="userService" />
+	</bean>
+	<bean id="notificationSenderAction" class="org.iita.struts.action.NotificationSenderAction" scope="request">
+		<constructor-arg ref="userService" />
+		<constructor-arg ref="userNotificationService" />
+	</bean>
+</beans>

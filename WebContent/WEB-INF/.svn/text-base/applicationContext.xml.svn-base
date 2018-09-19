@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	Do not modify this file!
+	Use applicationContext-project.xml for your settings.
+ -->
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+    http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+    http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+
+	<bean id="application-properties" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="ignoreUnresolvablePlaceholders">
+			<value>true</value>
+		</property>
+		<property name="locations">
+			<list>
+				<value>classpath:application.properties</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor" />
+	<aop:aspectj-autoproxy />
+
+	<bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+				<property name="database" value="${hibernate.database}" />
+				<property name="showSql" value="${hibernate.showSql}" />
+			</bean>
+		</property>
+		<property name="jpaPropertyMap">
+			<map>
+				<entry key="hibernate.hbm2ddl.auto" value="${hibernate.hbm2ddl}" />
+				<entry key="hibernate.format_sql" value="${hibernate.formatSql}" />
+				<entry key="hibernate.show_sql" value="${hibernate.showSql}" />
+				<entry key="hibernate.dialect" value="${hibernate.dialect}" />
+
+				<!-- Connection pooling -->
+				<entry key="hibernate.c3p0.min_size" value="5" />
+				<entry key="hibernate.c3p0.max_size" value="20" />
+				<entry key="hibernate.c3p0.timeout" value="1800" />
+				<entry key="hibernate.c3p0.max_statements" value="50" />
+				<entry key="hibernate.jdbc.batch_size" value="100" />
+
+				<!-- Auditing -->
+				<entry key="hibernate.ejb.interceptor" value="org.iita.hibernate.AuditInterceptor" />
+
+				<!-- Caching -->
+				<!--
+					<entry key="hibernate.cache.provider_class" value="org.hibernate.cache.EhCacheProvider" /> <entry key="hibernate.cache.use_query_cache" value="true" />
+				-->
+				<!-- Extra debugging -->
+				<entry key="hibernate.generate_statistics value" value="true" />
+				<entry key="hibernate.cache.use_structured_entries" value="true" />
+
+				<!-- Lucene -->
+				<entry key="hibernate.search.default.indexBase" value="${application.dataDirLocal}/lucene" />
+				<entry key="hibernate.search.default.directory_provider" value="org.hibernate.search.store.FSDirectoryProvider" />
+			</map>
+		</property>
+	</bean>
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="${database.driver}" />
+		<property name="url" value="${database.url}" />
+		<property name="username" value="${database.username}" />
+		<property name="password" value="${database.password}" />
+	</bean>
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+		<property name="entityManagerFactory" ref="entityManagerFactory" />
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager" />
+
+	<!-- SUPPORT SERVICES -->
+	<bean id="templatingService" class="org.iita.service.impl.FreemarkerTemplateEngine">
+		<property name="templateProperties">
+			<props>
+				<prop key="application.url">${application.url}</prop>
+				<prop key="application.production">${application.production}</prop>
+			</props>
+		</property>
+		<property name="templateService" ref="templateService" />
+	</bean>
+	<!-- Email service -->
+	<!-- See /WEB-INF/mail.properties -->
+	<bean id="emailService" class="org.iita.service.impl.JavaMail">
+		<property name="mailProperties">
+			<props>
+				<!-- <property name="javax.net.debug" value="ssl,handshake" /> -->
+				<prop key="mail.debug">${mail.debug}</prop>
+				<prop key="transport">smtp</prop>
+				<prop key="mail.smtp.host">${mail.smtp.host}</prop>
+				<prop key="mail.smtp.auth">${mail.smtp.auth}</prop>
+				<prop key="mail.smtp.starttls.enable">${mail.smtp.starttls.enable}</prop>
+				<prop key="mail.smtp.ssl.protocols">${mail.smtp.ssl.protocols}</prop>
+				<prop key="mail.smtp.connectiontimeout">${mail.smtp.connectiontimeout}</prop>
+				<prop key="mail.smtp.timeout">${mail.smtp.timeout}</prop>
+				<prop key="mail.smtps.connectiontimeout">${mail.smtp.connectiontimeout}</prop>
+				<prop key="mail.smtps.timeout">${mail.smtp.timeout}</prop>
+				<prop key="mail.smtp.port">${mail.smtp.port}</prop>
+				<prop key="mail.smtp.user">${mail.smtp.user}</prop>
+				<prop key="mail.smtp.password">${mail.smtp.password}</prop>
+				<prop key="mail.encoding">${mail.encoding}</prop>
+				<prop key="mail.sender.default">${mail.sender.default}</prop>
+			</props>
+		</property>
+		<property name="overrideRecipient" value="${mail.overrideRecipient}" />
+		<property name="alwaysBCC" value="${mail.alwaysBCC}" />
+	</bean>
+
+	<!-- Utility DAO service -->
+	<bean id="daoService" class="org.iita.service.impl.GeneralDAOServiceImpl" />
+
+	<!-- Converters -->
+	<bean id="genericConverter" class="org.iita.struts.GenericConverter" />
+	<bean id="timeConverter" class="org.iita.struts.TimeConverter" />
+
+	<!-- Interceptors -->
+	<bean id="regexParams" class="org.iita.struts.StrictParamsInterceptor" scope="prototype" />
+	<!-- Gears file upload -->
+	<bean id="gearsFileInterceptor" scope="singleton" class="org.iita.struts.interceptor.GearsFileUploadInterceptor" />
+	<!-- TimeZone -->
+	<bean id="timeZoneInterceptor" scope="singleton" class="org.iita.struts.interceptor.TimeZoneInterceptor" />
+	<!-- Application lock -->
+	<bean id="applicationLockService" class="org.iita.security.service.impl.ApplicationLockServiceImpl" scope="singleton" />
+	<bean id="applockInterceptor" scope="singleton" class="org.iita.struts.interceptor.ApplicationLockInterceptor">
+		<constructor-arg ref="applicationLockService" />
+	</bean>
+	<bean id="applicationLockAction" scope="request" class="org.iita.security.action.ApplicationLockAction">
+		<constructor-arg ref="applicationLockService" />
+	</bean>
+
+	<!-- Common beans -->
+	<bean id="adminFilesAction" class="org.iita.struts.DirectoryFilesAction" scope="request">
+		<constructor-arg value="${application.dataDir}" />
+	</bean>
+	<bean id="googleAnalyticsAction" class="org.iita.struts.GoogleAnalyticsAction">
+		<property name="siteId" value="${google.analytics.id}" />
+	</bean>
+	<bean id="showSchemaAction" class="org.iita.struts.action.admin.ShowSchemaAction" scope="request" />
+	<!-- Services -->
+	<bean id="xlsExportService" class="org.iita.service.impl.XLSExportService" />
+	<bean id="xlsImportService" class="org.iita.service.impl.XLSImportService" />
+
+	<!-- Full-text search (Lucene) -->
+	<bean id="searchService" class="org.iita.service.impl.SearchServiceImpl" />
+	<bean id="luceneIndexer" class="org.iita.service.impl.Indexer" scope="singleton" />
+	<bean id="reindexAction" class="org.iita.struts.action.admin.ReindexAction" scope="request">
+		<constructor-arg ref="luceneIndexer" />
+	</bean>
+	
+	<!-- Notification mechanisms through AspectJ -->
+	<bean id="applicationNotifications" class="${notifications.class}">
+		<description>Need to define it separately otherwise ApplicationListener is not triggered!</description>
+		<constructor-arg ref="userNotificationService" />
+		<constructor-arg ref="notificationSubscriptionService" />
+	</bean>
+	<bean class="${notifications.aspectj}">
+		<constructor-arg ref="applicationNotifications" />
+	</bean>
+	<bean id="javaStatusAction" class="org.iita.struts.action.admin.JavaStatusAction" scope="request" />
+	
+	<!-- Querying -->
+	<bean id="queryService" class="org.iita.service.impl.QueryServiceImpl" />
+	<bean id="queryAction" class="org.iita.struts.action.QueryAction" scope="request">
+		<constructor-arg ref="queryService" />
+	</bean>
+	<bean id="queryEditAction" class="org.iita.struts.action.QueryEditAction" scope="request">
+		<constructor-arg ref="queryService" />
+	</bean>
+	
+	<!-- Templates -->
+	<bean id="templateService" class="org.iita.service.impl.TemplateServiceImpl" />
+	<bean id="adminTemplateAction" class="org.iita.struts.action.admin.TemplateAction" scope="request">
+		<constructor-arg ref="templateService" />
+	</bean>
+	
+	<!-- Captcha -->
+	<bean id="captchaService" class="com.octo.captcha.service.image.DefaultManageableImageCaptchaService" />
+	<bean id="captchaRenderAction" class="org.iita.security.action.CaptchaRenderAction" scope="request">
+		<property name="captchaService" ref="captchaService" />
+	</bean>
+	<!-- Log management -->
+	<bean id="logAction" class="org.iita.struts.action.admin.Log4JAction" />
+	<bean id="logViewAction" class="org.iita.struts.action.admin.LogViewAction" />
+	
+	<!-- Public ajax actions (accessible in "/" namespace) -->
+	<bean id="publicAjaxAction" class="org.iita.struts.action.AjaxPublicAction" scope="request" />
+	<!-- Auth user ajax actions (accessible in "/" namespace) -->
+	<bean id="protectedAjaxAction" class="org.iita.struts.action.AjaxProtectedAction" scope="request" />
+	<!-- Admin ajax actions (accessible in "/admin/ajax" namespace) -->
+	<bean id="adminAjaxAction" class="org.iita.struts.action.admin.AjaxAdminAction" scope="request">
+		<constructor-arg ref="userService" />
+	</bean>
+	
+</beans>

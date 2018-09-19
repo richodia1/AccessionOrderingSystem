@@ -1,0 +1,181 @@
+/**
+ * accession2.Struts Jan 27, 2010
+ */
+package org.iita.accessions2.action;
+
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.struts2.ServletActionContext;
+import org.iita.accessions2.model.Accession;
+import org.iita.accessions2.model.ordering.Request;
+import org.iita.accessions2.service.SelectionService;
+import org.iita.ordering.OrderService;
+import org.iita.security.action.CaptchaValidator;
+import org.iita.struts.BaseAction;
+
+import com.octo.captcha.service.CaptchaServiceException;
+import com.octo.captcha.service.image.ImageCaptchaService;
+import com.opensymphony.xwork2.Action;
+import com.opensymphony.xwork2.ActionContext;
+import com.opensymphony.xwork2.validator.annotations.RequiredStringValidator;
+import com.opensymphony.xwork2.validator.annotations.Validations;
+
+/**
+ * @author mobreza
+ * 
+ */
+@SuppressWarnings("serial")
+public class OrderCreateAction extends BaseAction implements CaptchaValidator {
+	private SelectionService selectionService;
+	private OrderService<Request, Accession> orderService;
+	private Request order;
+	private ImageCaptchaService captchaService;
+
+	/**
+	 * @param selectionService
+	 * @param orderService
+	 * 
+	 */
+	public OrderCreateAction(SelectionService selectionService, OrderService<Request, Accession> orderService) {
+		this.selectionService = selectionService;
+		this.orderService = orderService;
+	}
+
+	/**
+	 * @return the order
+	 */
+	public Request getOrder() {
+		return this.order;
+	}
+
+	public List<Accession> getItems() {
+		return this.selectionService.all();
+	}
+
+	/**
+	 * @see org.iita.struts.BaseAction#prepare()
+	 */
+	@Override
+	public void prepare() {
+		// need to get order from session
+		this.order = this.orderService.getCurrentOrder();
+	}
+
+	/**
+	 * @see org.iita.struts.BaseAction#execute()
+	 */
+	@Override
+	public String execute() {
+		if (isNeedCaptcha() && !isCaptchaValid()) {
+			addActionError("Captcha control text does not match image");
+			return Action.ERROR;
+		}
+
+		if (this.order == null) {
+			if (this.selectionService.size() > 0) {
+				LOG.info("Creating order");
+				this.order = this.orderService.createOrder();
+			} else {
+				addActionError("There are no items in your selection list. Please select your accessions first.");
+				return Action.ERROR;
+			}
+		} else {
+			// using existing order
+			LOG.info("Have existing order");
+		}
+
+		if (this.order.isSmtaAccepted())
+			return Action.SUCCESS;
+		else
+			return "smta";
+	}
+
+	public String acceptSMTA() {
+		this.order.setSmtaAccepted(true);
+		return "reload";
+	}
+
+	public String rejectSMTA() {
+		this.order.setSmtaAccepted(false);
+		addActionError("Without accepting the SMTA, IITA cannot provide requested germplasm.");
+		return "smta";
+	}
+
+	@Validations(requiredStrings = { @RequiredStringValidator(fieldName = "order.requestor.lastName", message = "Last name is required"),
+			@RequiredStringValidator(fieldName = "order.requestor.organization", message = "Requestor organization is required"),
+			@RequiredStringValidator(fieldName = "order.requestor.email", message = "Requestor email is required"),
+			@RequiredStringValidator(fieldName = "order.requestor.country", message = "Requestor country is required"),
+			@RequiredStringValidator(fieldName = "order.requestor.address", message = "Shipping address is required") })
+	public String update() {
+		if (this.order == null) {
+			addActionError("You don't have a current order");
+			return Action.ERROR;
+		}
+		this.orderService.updateOrder(this.order);
+		return "reload";
+	}
+
+	/**
+	 * Submit final order
+	 * 
+	 * @return
+	 */
+
+	@Validations(requiredStrings = { @RequiredStringValidator(fieldName = "order.requestor.lastName", message = "Last name is required"),
+			@RequiredStringValidator(fieldName = "order.requestor.organization", message = "Requestor organization is required"),
+			@RequiredStringValidator(fieldName = "order.requestor.email", message = "Requestor email is required"),
+			@RequiredStringValidator(fieldName = "order.requestor.country", message = "Requestor country is required"),
+			@RequiredStringValidator(fieldName = "order.requestor.address", message = "Shipping address is required") })
+	public String submit() {
+		this.orderService.addItems(this.order, this.selectionService.all());
+		this.orderService.submit(this.order);
+		this.selectionService.clear();
+		return "finished";
+	}
+
+	public String cancel() {
+		this.orderService.cancel(this.order);
+		return "dashboard";
+	}
+
+	/**
+	 * @see org.iita.security.action.CaptchaValidator#setCaptchaService(com.octo.captcha.service.image.ImageCaptchaService)
+	 */
+	@Override
+	public void setCaptchaService(ImageCaptchaService captchaService) {
+		this.captchaService = captchaService;
+	}
+
+	/**
+	 * @see org.iita.security.action.CaptchaValidator#isCaptchaValid(java.lang.String)
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public boolean isCaptchaValid() {
+		ActionContext ac = ActionContext.getContext().getActionInvocation().getInvocationContext();
+		HttpServletRequest request = (HttpServletRequest) ac.get(ServletActionContext.HTTP_REQUEST);
+		String captchaId = request.getSession().getId();
+		String captchaText = request.getParameter("jcaptcha");
+		LOG.debug("Got jcaptcha: " + captchaText);
+		try {
+			boolean valid = this.captchaService.validateResponseForID(captchaId, captchaText);
+			ActionContext.getContext().getSession().put("CAPTCHA_VALIDATED", valid);
+			return valid;
+		} catch (CaptchaServiceException e) {
+			LOG.error(e.getMessage());
+			return false;
+		}
+	}
+
+	public boolean isNeedCaptcha() {
+		Object captchaValidated = ActionContext.getContext().getSession().get("CAPTCHA_VALIDATED");
+		LOG.debug("Captcha validated: " + captchaValidated);
+		if (captchaValidated == null || !(captchaValidated instanceof Boolean) || !((Boolean) captchaValidated).booleanValue())
+			return true;
+		else
+			return false;
+	}
+
+}

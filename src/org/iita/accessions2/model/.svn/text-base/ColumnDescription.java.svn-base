@@ -1,0 +1,356 @@
+/**
+ * accession2.Struts Jan 18, 2010
+ */
+package org.iita.accessions2.model;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderBy;
+import javax.persistence.Transient;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.iita.entity.MySqlBaseEntity;
+
+/**
+ * Column descriptions of experiment data
+ * 
+ * @author mobreza
+ */
+@Entity
+public class ColumnDescription extends MySqlBaseEntity {
+	private static final String UNKNOWN_CODEDVALUE = "Unknown code: %1$d";
+	private static final Log LOG = LogFactory.getLog(ColumnDescription.class);
+	private static final long serialVersionUID = 2103281630420851543L;
+
+	private Experiment experiment;
+	private String column;
+	private String title;
+	private String description;
+	private String dataType;
+	private double sortIndex;
+	private List<Coding> coding;
+	private ColumnType columnType;
+	private String prefix;
+	private String postfix;
+	private boolean visible = true;
+	private boolean systemColumn = false;
+
+	private Class<?> dataClass = null;
+
+	/**
+	 * @return the experiment
+	 */
+	@ManyToOne(cascade = {}, optional = false)
+	public Experiment getExperiment() {
+		return this.experiment;
+	}
+
+	/**
+	 * @param experiment the experiment to set
+	 */
+	public void setExperiment(Experiment experiment) {
+		this.experiment = experiment;
+	}
+
+	/**
+	 * @return the column
+	 */
+	@Column(length = 100, nullable = false, name = "`columnName`")
+	public String getColumn() {
+		return this.column;
+	}
+
+	/**
+	 * @param column the column to set
+	 */
+	public void setColumn(String column) {
+		this.column = column;
+	}
+
+	/**
+	 * Get column title
+	 * 
+	 * @return the title
+	 */
+	@Column(length = 500)
+	public String getTitle() {
+		return this.title;
+	}
+
+	/**
+	 * @param title the title to set
+	 */
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	/**
+	 * Get column description
+	 * 
+	 * @return the description
+	 */
+	@Lob
+	public String getDescription() {
+		return this.description;
+	}
+
+	/**
+	 * @param description the description to set
+	 */
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	/**
+	 * Get data type contained in the experiment table, a Java class name.
+	 * 
+	 * @return the dataType
+	 */
+	@Column(length = 200, nullable = false)
+	public String getDataType() {
+		return this.dataType;
+	}
+
+	/**
+	 * Set data type contained in experiment table. Must be a Java class name.
+	 * 
+	 * @param dataType the dataType to set
+	 */
+	public void setDataType(String dataType) {
+		this.dataType = dataType;
+	}
+
+	/**
+	 * Get sorting index
+	 * 
+	 * @return the sortIndex
+	 */
+	public double getSortIndex() {
+		return this.sortIndex;
+	}
+
+	/**
+	 * Set sorting index of this column. Columns will be sorted by this value ASCENDING.
+	 * 
+	 * @param sortIndex the sortIndex to set
+	 */
+	public void setSortIndex(double sortIndex) {
+		this.sortIndex = sortIndex;
+	}
+
+	/**
+	 * Get coding of column data, if used
+	 * 
+	 * @return the coding
+	 */
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "column")
+	@OrderBy("codedValue")
+	public List<Coding> getCoding() {
+		return this.coding;
+	}
+	
+	/**
+	 * Returns a copied list, sorted by Coding actualValue
+	 * @return
+	 */
+	@Transient
+	public List<Coding> getCodingSorted() {
+		List<Coding> copy=new ArrayList<Coding>(getCoding());
+		Collections.sort(copy, new Comparator<Coding>() {
+			@Override
+			public int compare(Coding arg0, Coding arg1) {
+				return arg0.getActualValue().compareTo(arg1.getActualValue());
+			}
+		});
+		return copy;
+	}
+
+	/**
+	 * @param coding the coding to set
+	 */
+	public void setCoding(List<Coding> coding) {
+		this.coding = coding;
+	}
+
+	/**
+	 * Is the column coded?
+	 * 
+	 * @return
+	 */
+	@Transient
+	public boolean isCoded() {
+		return this.columnType == ColumnType.CODED;
+	}
+
+	/**
+	 * @return the columnType
+	 */
+	@Enumerated(EnumType.STRING)
+	public ColumnType getColumnType() {
+		return this.columnType;
+	}
+
+	/**
+	 * @param columnType the columnType to set
+	 */
+	public void setColumnType(ColumnType columnType) {
+		this.columnType = columnType;
+	}
+
+	/**
+	 * @return the prefix
+	 */
+	@Column(length = 100)
+	public String getPrefix() {
+		return this.prefix;
+	}
+
+	/**
+	 * @param prefix the prefix to set
+	 */
+	public void setPrefix(String prefix) {
+		this.prefix = prefix;
+	}
+
+	/**
+	 * @return the postfix
+	 */
+	@Column(length = 100)
+	public String getPostfix() {
+		return this.postfix;
+	}
+
+	/**
+	 * @param postfix the postfix to set
+	 */
+	public void setPostfix(String postfix) {
+		this.postfix = postfix;
+	}
+
+	/**
+	 * @return
+	 */
+	@Transient
+	public Class<?> getDataClass() {
+		synchronized (this) {
+			if (this.dataClass == null) {
+				try {
+					this.dataClass = Class.forName(this.dataType);
+				} catch (ClassNotFoundException e) {
+					LOG.error("Error getting Java class for data type " + this.dataType);
+				}
+			}
+			return this.dataClass;
+		}
+	}
+
+	/**
+	 * @param value
+	 * @return
+	 * @throws CodingException
+	 */
+	public Object convertToCoded(Object value) throws CodingException {
+		if (value == null)
+			return value;
+		if (!this.isCoded())
+			return value;
+
+		// if we have coding, need to check!
+		if (value instanceof String) {
+			String strvalue = (String) value;
+			strvalue = strvalue.trim();
+			for (Coding coding : getCoding()) {
+				if (coding.getActualValue().equalsIgnoreCase(strvalue))
+					return coding.getCodedValue();
+				if (coding.getCode() != null && coding.getCode().equalsIgnoreCase(strvalue))
+					return coding.getCodedValue();
+			}
+			throw new CodingException("Missing coding for value '" + value + "'", strvalue);
+		} else if (value instanceof Integer) {
+			for (Coding coding : getCoding()) {
+				if (coding.getCodedValue() == (Integer) value)
+					return coding.getCodedValue();
+			}
+			throw new CodingException("Missing coded value " + value + "", (Integer) value);
+		} else
+			throw new CodingException("Cannot decode '" + value + "' of type " + value.getClass());
+	}
+
+	public String decode(int codedValue) {
+		for (Coding coding : getCoding()) {
+			if (coding.getCodedValue() == codedValue)
+				return (coding.getCode() == null ? "" : coding.getCode() + " - ") + coding.getActualValue();
+		}
+		return String.format(UNKNOWN_CODEDVALUE, codedValue);
+	}
+
+	public String decodeShort(int codedValue) {
+		for (Coding coding : getCoding()) {
+			if (coding.getCodedValue() == codedValue)
+				return coding.getActualValue();
+		}
+		return String.format(UNKNOWN_CODEDVALUE, codedValue);
+	}
+
+	/**
+	 * Find coding for codedValue
+	 * 
+	 * @param codedValue
+	 * @return
+	 */
+	public Coding findCoding(int codedValue) {
+		for (Coding coding : getCoding()) {
+			if (coding.getCodedValue() == codedValue)
+				return coding;
+		}
+		return null;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.title + " [" + this.column + "]";
+	}
+
+	/**
+	 * @return the visible
+	 */
+	public boolean isVisible() {
+		return this.visible;
+	}
+
+	/**
+	 * @param visible the visible to set
+	 */
+	public void setVisible(boolean visible) {
+		this.visible = visible;
+	}
+	
+	/**
+	 * @return the systemColumn
+	 */
+	public boolean isSystemColumn() {
+		return this.systemColumn;
+	}
+	
+	/**
+	 * @param systemColumn the systemColumn to set
+	 */
+	public void setSystemColumn(boolean systemColumn) {
+		this.systemColumn = systemColumn;
+	}
+}

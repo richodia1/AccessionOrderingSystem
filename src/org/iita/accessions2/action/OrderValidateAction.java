@@ -1,0 +1,86 @@
+/**
+ * accession2.Struts Jun 14, 2010
+ */
+package org.iita.accessions2.action;
+
+import org.iita.accessions2.model.Accession;
+import org.iita.accessions2.model.ordering.Request;
+import org.iita.ordering.OrderService;
+import org.iita.struts.BaseAction;
+
+import com.opensymphony.xwork2.Action;
+
+/**
+ * @author mobreza
+ * 
+ */
+@SuppressWarnings("serial")
+public class OrderValidateAction extends BaseAction {
+	private OrderService<Request, Accession> orderService;
+	private Long id = null;
+	private String key = null;
+	private Request request;
+
+	/**
+	 * @param id the id to set
+	 */
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	/**
+	 * @return the id
+	 */
+	public Long getId() {
+		return this.id;
+	}
+
+	/**
+	 * @param key the key to set
+	 */
+	public void setKey(String key) {
+		this.key = key;
+	}
+
+	/**
+	 * @return the key
+	 */
+	public String getKey() {
+		return this.key;
+	}
+
+	/**
+	 * @return the request
+	 */
+	public Request getRequest() {
+		return this.request;
+	}
+
+	/**
+	 * @param orderService
+	 * 
+	 */
+	public OrderValidateAction(OrderService<Request, Accession> orderService) {
+		this.orderService = orderService;
+	}
+
+	/**
+	 * @see org.iita.struts.BaseAction#execute()
+	 */
+	@Override
+	public String execute() {
+		if (this.id != null && this.key != null) {
+			try {
+				System.out.println("ORDER ID: " + this.id);
+				System.out.println("ORDER KEY: " + this.key);
+				this.request = this.orderService.validateOrder(this.id, this.key);
+				System.out.println("REQUEST ORDER ID: " + this.request.getId());
+				System.out.println("REQUEST ORDER STATE: " + this.request.getState());
+				return Action.SUCCESS;
+			} catch (Exception e) {
+				addActionError(e.getMessage());
+			}
+		}
+		return Action.ERROR;
+	}
+}

@@ -1,0 +1,87 @@
+# The block of messages below are only found in this file. If you'd
+# like to override them for other languages, simply add the keys
+# to the other resource bundles.
+webapp.name=IITA Accessions 2
+webapp.tagline=All your base are belong to us.
+webapp.version=Version 0.2
+company.name=IITA
+company.url=http://www.iita.org
+copyright.year=2008
+
+# Formats
+date.format=dd/MM/yyyy
+
+# Formatting
+format.time = {0,time}
+format.number = {0,number,#,##0.00}
+format.percent = {0,number,##0.00'%'}
+format.money = {0,number,\#,##0.00}
+format.date = {0,date,dd/MM/yyyy}
+
+# -- error page messages --
+errorPage.title=An error has occurred
+errorPage.heading=Yikes! An error occured in the application.
+404.title=Page Not Found
+404.message=The page you requested was not found.  You might try returning to the <a href="{0}">Main Menu</a>.
+403.title=Access Denied
+403.message=Your current role does not allow you to perform the requested action.  Please contact your system administrator if you believe you should have access.
+
+# SEARCH
+search.paging.title=Result page
+search.paging.previous=Previous
+search.paging.next=Next
+search.paging.last=Last
+search.paging.first=First
+
+# User
+password.request.subject=Request to regenerate password for IITA on-line application
+password.generated.subject=Password for IITA on-line application
+
+user.role.ROLE_ADMIN=System Administrator
+user.role.desc.ROLE_ADMIN=Manages user access to application, adds new units to system
+user.role.ROLE_READALL=Reader
+user.role.desc.ROLE_READALL=Can access all records in the system
+user.role.ROLE_READTAG=Tagged reader
+user.role.desc.ROLE_READTAG=Can access records in the system with matching tags
+
+# Request
+request.client.emailRequired=A contact e-mail address must be provided.
+request.client.lastNameRequired=Your last name is a required field.
+request.client.instituteNameRequired=Please provide institute name.
+request.client.intendedUseRequired=Please select intended germplasm use and provide project description.
+
+request.confirmation.orderKeyRequired=Order key was not provided
+request.confirmation.requestIdRequired=Request ID was not provided
+
+request.admin.requestMissing=Request not loaded or missing
+request.admin.approve.commentRequired=Please provide comment to be sent with approval e-mail message
+request.admin.reject.commentRequired=Please provide comment to be sent with rejection e-mail message
+
+order.state.NEW=New order
+order.state.VALIDATEEMAIL=Waiting for email validation
+order.state.PENDING=Waiting for Genebank approval
+
+
+# Notifications
+notification.frequency.WITHINAPPLICATION=Within application
+notification.frequency.INSTANT=Instant
+notification.frequency.DAILY=Dailiy
+notification.frequency.MONTHLY=Monthly
+
+notification.priority.LOW=Low
+notification.priority.NORMAL=Normal
+notification.priority.HIGH=High
+
+
+notification.userLoggedIn=User logon
+notification.userLoggedIn.description=Notifies you when users successfully authenticate
+notification.authenticationFailed=Authentication failure
+notification.authenticationFailed.description=Sends notification when authentication fails
+notification.userLoggingOut=User log-off
+notification.userLoggingOut.description=Notifies you when users log out of the application
+notification.userSwitched=User switched
+notification.userSwitched.description=Sends notification when a user switches to another user
+notification.userUnswitched=User unswitched
+notification.userUnswitched.description=Sends notification when user switches back to themselves
+notification.applicationExceptionThrown=Application exception
+notification.applicationExceptionThrown.description=Send notification when exceptions happen in code

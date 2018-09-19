@@ -1,0 +1,349 @@
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+<struts>
+	<!-- Constants -->
+	<constant name="struts.devMode" value="false" />
+	<constant name="struts.i18n.encoding" value="UTF-8" />
+	<constant name="struts.action.extension" value="jspx" />
+	<constant name="struts.objectFactory" value="spring" />
+	<constant name="struts.custom.i18n.resources" value="ApplicationResources" />
+	<constant name="struts.multipart.maxSize" value="56235557" />
+	<constant name="struts.ui.theme" value="simple" />
+	<constant name="struts.url.includeParams" value="none" />
+
+	<!-- The following two need to be defined to enable slashes -->
+	<constant name="struts.enable.SlashesInActionNames" value="true" />
+	<constant name="struts.mapper.alwaysSelectFullNamespace" value="false" />
+
+	<!-- Configuration for the default package. -->
+	<package name="default" extends="struts-default">
+		<interceptors>
+			<interceptor name="regexpParams" class="regexParams">
+				<param name="allowSimpleNames">false</param>
+			</interceptor>
+			<interceptor name="applock" class="applockInterceptor" />
+			<interceptor name="gearsUpload" class="gearsFileInterceptor" />
+			<interceptor name="timeZone" class="timeZoneInterceptor" />
+
+			<!-- Copied from struts-default.xml and changed validation exclude methods -->
+			<interceptor-stack name="iitaStack">
+				<interceptor-ref name="exception" />
+				<interceptor-ref name="alias" />
+				<interceptor-ref name="timeZone" />
+				<!-- Strict parameters interceptor -->
+				<interceptor-ref name="regexpParams" />
+				<interceptor-ref name="servletConfig" />
+				<interceptor-ref name="prepare" />
+				<interceptor-ref name="i18n" />
+				<interceptor-ref name="chain" />
+				<!-- Application locking -->
+				<interceptor-ref name="applock" />
+				<interceptor-ref name="modelDriven" />
+				<interceptor-ref name="fileUpload" />
+				<interceptor-ref name="gearsUpload" />
+				<interceptor-ref name="checkbox" />
+				<interceptor-ref name="staticParams" />
+				<interceptor-ref name="regexpParams" />
+				<interceptor-ref name="conversionError" />
+				<interceptor-ref name="validation">
+					<param name="validateAnnotatedMethodOnly">true</param>
+					<param name="excludeMethods">cancel,execute,delete,edit,list</param>
+				</interceptor-ref>
+				<interceptor-ref name="workflow">
+					<param name="excludeMethods">input,back,cancel</param>
+				</interceptor-ref>
+			</interceptor-stack>
+
+			<interceptor-stack name="defaultStack">
+				<interceptor-ref name="exception" />
+				<interceptor-ref name="alias" />
+				<interceptor-ref name="servlet-config" />
+				<interceptor-ref name="prepare" />
+				<interceptor-ref name="i18n" />
+				<interceptor-ref name="chain" />
+				<interceptor-ref name="debugging" />
+				<interceptor-ref name="profiling" />
+				<interceptor-ref name="scoped-model-driven" />
+				<interceptor-ref name="model-driven" />
+				<interceptor-ref name="fileUpload" />
+				<interceptor-ref name="gearsUpload" />
+				<interceptor-ref name="checkbox" />
+				<interceptor-ref name="static-params" />
+				<interceptor-ref name="params">
+					<param name="excludeParams">dojo\..*</param>
+				</interceptor-ref>
+				<interceptor-ref name="conversionError" />
+				<interceptor-ref name="validation">
+					<param name="validateAnnotatedMethodOnly">true</param>
+					<param name="excludeMethods">cancel,execute,delete,edit,list</param>
+				</interceptor-ref>
+				<interceptor-ref name="workflow">
+					<param name="excludeMethods">input,back,cancel,browse</param>
+				</interceptor-ref>
+			</interceptor-stack>
+			<interceptor-stack name="fileUploadStack">
+				<interceptor-ref name="fileUpload" />
+				<interceptor-ref name="gearsUpload" />
+				<interceptor-ref name="defaultStack" />
+			</interceptor-stack>
+			<interceptor-stack name="adminCheck">
+				<interceptor-ref name="defaultStack" /><!--
+				<interceptor-ref name="adminOnly" />
+			-->
+			</interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="iitaStack" />
+
+		<global-results>
+			<!-- Application locking -->
+			<result name="application-locked" type="redirect-action">application-locked</result>
+			<result name="error">/WEB-INF/jsp/generic-error.jsp</result>
+			<result name="download" type="stream">
+				<param name="contentType">application/octet-stream</param>
+				<param name="inputName">downloadStream</param>
+				<param name="contentDisposition">attachment; filename="${downloadFileName}"</param>
+				<param name="bufferSize">2048</param>
+			</result>
+			<result name="dashboard" type="redirect-action">index</result>
+			<result name="access-denied">/403.jsp</result>
+		</global-results>
+		<global-exception-mappings>
+			<!-- Application locking -->
+			<exception-mapping result="application-locked" exception="org.iita.struts.interceptor.ApplicationLockedException" />
+			<exception-mapping result="error" exception="org.springframework.dao.DataIntegrityViolationException" />
+			<exception-mapping result="error" exception="java.lang.Exception" />
+			<exception-mapping result="access-denied" exception="org.springframework.security.AccessDeniedException" />
+		</global-exception-mappings>
+
+
+		<action name="application-locked" class="applicationLockAction" method="execute">
+			<result>/WEB-INF/jsp/application-locked.jsp</result>
+		</action>
+		<action name="applock-status" class="applicationLockAction">
+			<result name="*">/WEB-INF/jsp/admin/applock/status.jsp</result>
+		</action>
+	</package>
+
+	<package name="public" extends="default">
+		<action name="login">
+			<result>/WEB-INF/jsp/user/login.jsp</result>
+		</action>
+		<action name="accessdenied">
+			<result>/WEB-INF/jsp/user/accessdenied.jsp</result>
+		</action>
+		<action name="remind/username" class="userRemindUsernameAction">
+			<result>/WEB-INF/jsp/user/reminder/username.jsp</result>
+		</action>
+		<action name="remind/password" class="userPasswordAction">
+			<result>/WEB-INF/jsp/user/reminder/password.jsp</result>
+			<result name="input">/WEB-INF/jsp/user/reminder/password.jsp</result>
+		</action>
+		<action name="remind/regenerate" class="userPasswordAction" method="generatePassword">
+			<result name="success" type="redirect-action">
+				<param name="actionName">user/changepasswordsetting</param>
+				<param name="namespace">/</param>
+			</result>
+			<result name="input">/WEB-INF/jsp/user/reminder/notgenerated.jsp</result>
+		</action>
+		<action name="preferences" class="userPreferencesAction">
+			<result>/WEB-INF/jsp/user/preferences.jsp</result>
+			<result name="error">/WEB-INF/jsp/user/preferences.jsp</result>
+			<result name="input">/WEB-INF/jsp/user/preferences.jsp</result>
+			<result name="reload" type="redirect-action">preferences</result>
+		</action>
+		<action name="user-info" class="userInfoAction">
+			<result>/WEB-INF/jsp/userinfo.jsp</result>
+			<result name="input">/WEB-INF/jsp/userinfo.jsp</result>
+			<result name="error">/WEB-INF/jsp/userinfo.jsp</result>
+			<result name="*">/WEB-INF/jsp/userinfo.jsp</result>
+		</action>
+		<action name="user/delegate" class="delegationAction">
+			<result>/WEB-INF/jsp/user/delegate/delegate.jsp</result>
+			<result name="reload" type="redirect-action">user/delegate</result>
+			<result name="input">/WEB-INF/jsp/user/delegate/delegate.jsp</result>
+			<result name="switch" type="redirect-action">index</result>
+			<result name="error">/WEB-INF/jsp/user/delegate/status.jsp</result>
+		</action>
+		<action name="google/analytics" class="googleAnalyticsAction">
+			<result>/WEB-INF/jsp/google/analytics.jsp</result>
+		</action>
+		<action name="user/notification" class="notificationAction">
+			<result name="success">/WEB-INF/jsp/user/notifications.jsp</result>
+			<result name="detail">/WEB-INF/jsp/user/notif.jsp</result>
+			<result name="input">/WEB-INF/jsp/user/notifications.jsp</result>
+			<result name="refresh" type="redirect-action">user/notification</result>
+		</action>
+		
+		<action name="user/changepasswordsetting" class="userPasswordSettingAction">
+			<result>/WEB-INF/jsp/user/passwordsetting.jsp</result>
+			<result name="success">/WEB-INF/jsp/user/passwordsetting.jsp</result>
+			<result name="error">/WEB-INF/jsp/user/passwordsetting.jsp</result>
+			<result name="input">/WEB-INF/jsp/user/passwordsetting.jsp</result>
+		</action>
+		
+		<action name="user/notification-quick" class="notificationAction" method="unread">
+			<result name="*">/WEB-INF/jsp/user/notifications-quick.jsp</result>
+		</action>
+		<action name="captcha" class="captchaRenderAction">
+			<result type="stream">
+				<param name="contentType">image/png</param>
+				<param name="inputName">downloadStream</param>
+				<param name="contentDisposition">filename="${downloadFileName}"</param>
+				<param name="bufferSize">2048</param>
+			</result>
+		</action>
+		<!-- Message sender bean action -->
+		<action name="user/sendnotification" class="notificationSenderAction" method="mailSender">
+			<result name="success">/WEB-INF/jsp/user/notifications.jsp</result>
+			<result name="error">/WEB-INF/jsp/user/notifications.jsp</result>
+			<result>/WEB-INF/jsp/user/notifications.jsp</result>
+		</action>
+
+		<!-- Subscriptions -->
+		<action name="user/notification/manage" class="notificationSubscriptionAction">
+			<result>/WEB-INF/jsp/user/notification/manage.jsp</result>
+			<result name="reload" type="redirect-action">user/notification/manage</result>
+		</action>
+
+		<!-- Querying -->
+		<action name="query/index" class="queryAction" method="list">
+			<result name="list">/WEB-INF/jsp/c/query/query-list.jsp</result>
+		</action>
+		<action name="query/edit" class="queryEditAction" method="profile">
+			<result name="profile">/WEB-INF/jsp/c/query/query-edit.jsp</result>
+			<result name="redirect-list" type="redirect-action">query/index</result>
+		</action>
+		<action name="query/run" class="queryAction" method="execute">
+			<result>/WEB-INF/jsp/c/query/query.jsp</result>
+		</action>
+	</package>
+
+	<package name="admin" namespace="/admin" extends="default">
+		<action name="index">
+			<result>/WEB-INF/jsp/admin/index.jsp</result>
+		</action>
+
+		<!-- User management -->
+		<action name="users" class="userAction">
+			<result name="success">/WEB-INF/jsp/user/admin/index.jsp</result>
+			<result name="found-one" type="redirect-action">user/user!input?id=${user.id}</result>
+			<result name="input">/WEB-INF/jsp/user/admin/userEdit.jsp</result>
+		</action>
+		<action name="user/user" class="userAction">
+			<result name="success" type="redirect-action">users</result>
+			<result name="input">/WEB-INF/jsp/user/admin/userEdit.jsp</result>
+			<result name="error" type="redirect-action">users</result>
+			<result name="switch" type="redirect-action">
+				<param name="actionName">index</param>
+				<param name="namespace">/</param>
+			</result>
+		</action>
+		<action name="user/password" class="changePasswordAction">
+			<result name="success" type="redirect-action">user/user!input?id=${user.id}</result>
+			<result name="input">/WEB-INF/jsp/user/admin/password.jsp</result>
+			<result name="error">/WEB-INF/jsp/user/admin/password.jsp</result>
+		</action>
+		<action name="userSave" method="save" class="userAction">
+			<result name="success" type="redirect-action">users</result>
+			<result name="input">/WEB-INF/jsp/user/admin/userEdit.jsp</result>
+			<result name="error" type="redirect-action">users</result>
+			<result name="reload" type="redirect-action">user/user!input?id=${user.id}</result>
+		</action>
+		<action name="user/roles" class="userRolesAction">
+			<result>/WEB-INF/jsp/user/admin/roles.jsp</result>
+		</action>
+
+		<!-- Application locking -->
+		<action name="applock" class="applicationLockAction">
+			<result name="success">/WEB-INF/jsp/admin/applock/index.jsp</result>
+			<result name="unlocked" type="redirect-action">applock</result>
+		</action>
+
+		<!-- Admin file browse -->
+		<action name="browse" class="adminFilesAction">
+			<result>/WEB-INF/jsp/filebrowser/browse.jsp</result>
+			<result name="reload" type="redirect-action">browse?id=${id}&amp;directory=${directory}</result>
+		</action>
+
+		<!-- DB schema -->
+		<action name="schema" class="showSchemaAction">
+			<result>/WEB-INF/jsp/admin/schema.jsp</result>
+		</action>
+
+		<!-- Lucene -->
+		<action name="lucene/reindex" class="reindexAction">
+			<result>/WEB-INF/jsp/admin/search/reindex.jsp</result>
+			<result name="redirect" type="redirect-action">lucene/reindex</result>
+		</action>
+
+		<!-- Java Status -->
+		<action name="java-status" class="javaStatusAction">
+			<result name="success">/WEB-INF/jsp/admin/java-status.jsp</result>
+			<result name="refresh" type="redirect-action">java-status</result>
+		</action>
+
+		<!-- Template management -->
+		<action name="template/index" class="adminTemplateAction">
+			<result>/WEB-INF/jsp/admin/template/list.jsp</result>
+		</action>
+		<action name="template/profile" class="adminTemplateAction" method="profile">
+			<result>/WEB-INF/jsp/admin/template/profile.jsp</result>
+			<result name="input">/WEB-INF/jsp/admin/template/profile.jsp</result>
+			<result name="to-list" type="redirect-action">template/index</result>
+			<result name="reload" type="redirect-action">template/profile?shortName=${template.shortName}</result>
+		</action>
+
+		<!-- Logging -->
+		<action name="log" class="logAction">
+			<result name="success">/WEB-INF/jsp/admin/log/index.jsp</result>
+			<result name="refresh" type="redirect-action">log</result>
+		</action>
+		<action name="log/view" class="logViewAction">
+			<result name="success">/WEB-INF/jsp/admin/log/view.jsp</result>
+			<result name="refresh" type="redirect-action">log/view</result>
+		</action>
+		
+		<action name="schedule/index" class="adminScheduleAction">
+			<result>/WEB-INF/jsp/admin/schedule/index.jsp</result>
+			<result name="reload" type="redirect-action">schedule/index</result>
+		</action>
+		
+		<!-- Project specific admin actions should go to struts-project.xml -->
+	</package>
+
+	<!-- AJAX package definition -->
+	<package name="ajax">
+		<result-types>
+			<result-type name="json" class="com.googlecode.jsonplugin.JSONResult">
+				<param name="enableSMD">true</param>
+			</result-type>
+		</result-types>
+		<interceptors>
+			<interceptor name="json" class="com.googlecode.jsonplugin.JSONInterceptor">
+				<param name="enableSMD">true</param>
+				<param name="excludeProperties">
+					[^\.]+\.[^\.]+\..+.+
+				</param>
+			</interceptor>
+		</interceptors>
+		<default-interceptor-ref name="json" />
+	</package>
+	
+	<!-- Actual ajax actions -->
+	<package name="public-ajax" extends="ajax" namespace="/ajax">
+		<action name="public" class="publicAjaxAction">
+			<result type="json" />
+		</action>
+		<action name="protected" class="protectedAjaxAction">
+			<result type="json" />
+		</action>
+	</package>
+	<package name="admin-ajax" extends="ajax" namespace="/admin/ajax">
+		<action name="admin" class="adminAjaxAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<include file="struts-project.xml" />
+</struts>

@@ -1,0 +1,38 @@
+<html>
+<head>
+<title>Log management</title>
+</head>
+<body>
+<h1>Log management</h1>
+<p>Running on <a href="http://tomcat.apache.org/" target="_blank">Apache Tomcat</a> application generated logs are stored in <code>${CATALINA_HOME}/logs</code>.
+When Tomcat is managed with DJB's <a href="http://cr.yp.to/daemontools.html"><code>daemontools</code></a> tool, log files are managed by <a
+	href="http://cr.yp.to/daemontools/multilog.html"><code>multilog</code></a> and will be stored in <code>/etc/service/SERVICENAME/log/main</code> folder.</p>
+<p>Application code uses a common logging platform which allows us to dynamically configure logging levels of application code.</p>
+
+<p class="help-img"><img src="../img/log-loggers.png" /> Logger listing</p>
+
+<div id="log_level">
+<h2>Log levels</h2>
+<p>Applications use various loggers that allow detailed control on amount of logged information. Setting log level to TRACE will log every possible log
+entry to the file.</p>
+<ul>
+	<li>FATAL: Only fatal information should be logged</li>
+	<li>ERROR: Log error information</li>
+	<li>WARN: Log application warnings</li>
+	<li>INFO: Log informative messages</li>
+	<li>DEBUG: Log debug level information</li>
+	<li>TRACE: Log everything</li>
+</ul>
+</div>
+
+<h2>Configuring log levels</h2>
+<p>At application startup, default log levels are assumed. You can manually adjust log levels by selecting desired log level of a particular logger.</p>
+<div id="log_name">
+<p>Log name is either a complete <em>package</em> or <em>class</em> name. To see available names, browse the list of loggers below the form.</p>
+<p class="help-img"><img src="../img/log-manage.png" /> Configuring log levels of loggers</p>
+<p><b>Example:</b> Setting logger <code>org.iita.security</code> to <b>TRACE</b> will start logging all possible log information regarding user
+authentication and authorization to log files.</p>
+</div>
+
+</body>
+</html>

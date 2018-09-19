@@ -1,0 +1,25 @@
+<html>
+<head>
+<title>Indexing data</title>
+</head>
+<body>
+<h1>Full-text Indexing</h1>
+<p>Application uses <b>Apache Lucene</b> to provide full-text search functionality. Data is automatically reindexed by the application as changes occur.
+Even so, re-indexing application data is sometimes required.</p>
+<p><b>Warning:</b> Reindexing may take a long time!</p>
+
+<h2>When to reindex?</h2>
+<p>Application data needs to be reindexed in following cases:</p>
+<ul>
+	<li>Database was modified using external tools</li>
+	<li>Indexes are corrupt</li>
+	<li>After restoring data backups</li>
+</ul>
+
+<h2>Reindexing parts of database</h2>
+<p>Reindexer tool allows you to reindex only relevant parts of the database. Select the data you want reindexed and click <b>Reindex</b> button.</p>
+<p class="help-img"><img src="../img/lucene-reindexing.png" /> Reindexing in progress</p>
+<p>While reindexing is in progress, nobody can schedule another reindexing job until the one running is completed.</p>
+
+</body>
+</html>

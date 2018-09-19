@@ -1,0 +1,662 @@
+/**
+ * accession2.Struts Jan 18, 2010
+ */
+package org.iita.accessions2.model;
+
+import java.util.Date;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+
+import org.hibernate.search.annotations.ClassBridge;
+import org.hibernate.search.annotations.Indexed;
+import org.iita.entity.VersionedEntity;
+
+/**
+ * Accession entity contains <b>Multicrop Passport Descriptor</b> fields and some other common passport data for all accessions. An accession must belong to one
+ * {@link Collection} and must have a unique name within the system.
+ * 
+ * @author mobreza
+ */
+@Entity
+// @Table(uniqueConstraints = { @UniqueConstraint(columnNames = { "collection_id", "accessionId" }) })
+@Indexed
+@ClassBridge(impl = org.iita.accessions2.lucene.AccessionBridge.class)
+public class Accession extends VersionedEntity {
+	private static final long serialVersionUID = -4065463921186122783L;
+
+	private Collection collection;
+	private String name;
+	private Long accessionId;
+	private List<AccessionName> otherNames;
+	private List<Image> images;
+	private List<Experiment> experiments;
+
+	// IITA
+	private Boolean inTrust;
+	private Boolean core;
+	private Boolean annex1;
+	private Integer singerTaxonomy;
+	private String grinTaxonomy;
+	private Boolean available = false;
+
+	// MCPD
+	// Institute code
+	private String instCode;
+	// Collecting number
+	private String collNumb;
+	// Collector's name
+	private String collName;
+	// Collecting institute code
+	private String collCode;
+	// Collecting/acquisition source
+	private Integer collSrc;
+	// Genus
+	private String genus;
+	// Species
+	private String species;
+	// Species authority
+	private String spAuthor;
+	// Subtaxa
+	private String subtaxa;
+	// Subtaxa authority
+	private String subtAuthor;
+	// Acquisition date
+	private Date acqDate;
+	// Country of origin
+	private Integer origCty;
+	// State/province
+	private String province;
+	// Location
+	private String location;
+	// Latitude
+	private Double latitude;
+	// Longitude
+	private Double longitude;
+	// Elevation
+	private Double elevation;
+	// Collecting date of sample
+	private Date collDate;
+	// Breeding institute code
+	private String bredCode;
+	// Biological status of accession
+	private Integer sampStat;
+	// Ancestral data
+	private String ancest;
+	// Remarks
+	private String remarks;
+	// Cultivar name
+	private String cultivarName;
+	// Frequency at collecting site
+	private Integer frequency;
+	// Donor institute
+	private String donorCode;
+	// Donor name
+	private String donorName;
+
+	private List<AccessionName> names;
+
+	/**
+	 * Get {@link Collection} to which this accession belongs
+	 * 
+	 * @return the collection
+	 */
+	@ManyToOne(cascade = {})
+	public Collection getCollection() {
+		return this.collection;
+	}
+
+	/**
+	 * @param collection the collection to set
+	 */
+	public void setCollection(Collection collection) {
+		this.collection = collection;
+	}
+
+	/**
+	 * Get accession name. Example: "TVu-123"
+	 * 
+	 * @return the name
+	 */
+	@Column(unique = true, nullable = false, length = 100, name = "accessionName")
+	public String getName() {
+		return this.name;
+	}
+
+	/**
+	 * Set accession name. Accession name must be unique within the entire system.
+	 * 
+	 * @param name the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	/**
+	 * Get accession ID -- a sequential number of accession within the collection
+	 * 
+	 * @return the accessionId
+	 */
+	public Long getAccessionId() {
+		return this.accessionId;
+	}
+
+	/**
+	 * @param accessionId the accessionId to set
+	 */
+	public void setAccessionId(Long accessionId) {
+		this.accessionId = accessionId;
+	}
+
+	/**
+	 * @return the otherNames
+	 */
+	@OneToMany(cascade = CascadeType.ALL, mappedBy = "accession")
+	public List<AccessionName> getOtherNames() {
+		return this.otherNames;
+	}
+
+	/**
+	 * @param otherNames the otherNames to set
+	 */
+	public void setOtherNames(List<AccessionName> otherNames) {
+		this.otherNames = otherNames;
+	}
+
+	/**
+	 * @return the images
+	 */
+	@ManyToMany(cascade = {})
+	public List<Image> getImages() {
+		return this.images;
+	}
+
+	/**
+	 * @param images the images to set
+	 */
+	public void setImages(List<Image> images) {
+		this.images = images;
+	}
+
+	// ---- MCPD section
+
+	/**
+	 * @return the instCode
+	 */
+	public String getInstCode() {
+		return this.instCode;
+	}
+
+	/**
+	 * @param instCode the instCode to set
+	 */
+	public void setInstCode(String instCode) {
+		this.instCode = instCode;
+	}
+
+	/**
+	 * @return the collNumb
+	 */
+	public String getCollNumb() {
+		return this.collNumb;
+	}
+
+	/**
+	 * @param collNumb the collNumb to set
+	 */
+	public void setCollNumb(String collNumb) {
+		this.collNumb = collNumb;
+	}
+
+	/**
+	 * Get Collector's name
+	 * 
+	 * @return
+	 */
+	public String getCollName() {
+		return collName;
+	}
+
+	public void setCollName(String collName) {
+		this.collName = collName;
+	}
+
+	/**
+	 * @return the collCode
+	 */
+	public String getCollCode() {
+		return this.collCode;
+	}
+
+	/**
+	 * @param collCode the collCode to set
+	 */
+	public void setCollCode(String collCode) {
+		this.collCode = collCode;
+	}
+
+	/**
+	 * @return the genus
+	 */
+	public String getGenus() {
+		return this.genus;
+	}
+
+	/**
+	 * @param genus the genus to set
+	 */
+	public void setGenus(String genus) {
+		this.genus = genus;
+	}
+
+	/**
+	 * @return the species
+	 */
+	public String getSpecies() {
+		return this.species;
+	}
+
+	/**
+	 * @param species the species to set
+	 */
+	public void setSpecies(String species) {
+		this.species = species;
+	}
+
+	/**
+	 * @return the spAuthor
+	 */
+	public String getSpAuthor() {
+		return this.spAuthor;
+	}
+
+	/**
+	 * @param spAuthor the spAuthor to set
+	 */
+	public void setSpAuthor(String spAuthor) {
+		this.spAuthor = spAuthor;
+	}
+
+	/**
+	 * @return the subtaxa
+	 */
+	public String getSubtaxa() {
+		return this.subtaxa;
+	}
+
+	/**
+	 * @param subtaxa the subtaxa to set
+	 */
+	public void setSubtaxa(String subtaxa) {
+		this.subtaxa = subtaxa;
+	}
+
+	/**
+	 * @return the subtAuthor
+	 */
+	public String getSubtAuthor() {
+		return this.subtAuthor;
+	}
+
+	/**
+	 * @param subtAuthor the subtAuthor to set
+	 */
+	public void setSubtAuthor(String subtAuthor) {
+		this.subtAuthor = subtAuthor;
+	}
+
+	/**
+	 * @return the acqDate
+	 */
+	public Date getAcqDate() {
+		return this.acqDate;
+	}
+
+	/**
+	 * @param acqDate the acqDate to set
+	 */
+	public void setAcqDate(Date acqDate) {
+		this.acqDate = acqDate;
+	}
+
+	/**
+	 * @return the origCty
+	 */
+	public Integer getOrigCty() {
+		return this.origCty;
+	}
+
+	/**
+	 * @param origCty the origCty to set
+	 */
+	public void setOrigCty(Integer origCty) {
+		this.origCty = origCty;
+	}
+
+	@Column(length = 200)
+	public String getProvince() {
+		return province;
+	}
+
+	public void setProvince(String province) {
+		this.province = province;
+	}
+
+	/**
+	 * @return the location
+	 */
+	public String getLocation() {
+		return this.location;
+	}
+
+	/**
+	 * @param location the location to set
+	 */
+	public void setLocation(String location) {
+		this.location = location;
+	}
+
+	/**
+	 * @return the latitude
+	 */
+	public Double getLatitude() {
+		return this.latitude;
+	}
+
+	/**
+	 * @param latitude the latitude to set
+	 */
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
+	}
+
+	/**
+	 * @return the longitude
+	 */
+	public Double getLongitude() {
+		return this.longitude;
+	}
+
+	/**
+	 * @param longitude the longitude to set
+	 */
+	public void setLongitude(Double longitude) {
+		this.longitude = longitude;
+	}
+
+	/**
+	 * @return the elevation
+	 */
+	public Double getElevation() {
+		return this.elevation;
+	}
+
+	/**
+	 * @param elevation the elevation to set
+	 */
+	public void setElevation(Double elevation) {
+		this.elevation = elevation;
+	}
+
+	/**
+	 * @return the collDate
+	 */
+	public Date getCollDate() {
+		return this.collDate;
+	}
+
+	/**
+	 * @param collDate the collDate to set
+	 */
+	public void setCollDate(Date collDate) {
+		this.collDate = collDate;
+	}
+
+	/**
+	 * @return the bredCode
+	 */
+	public String getBredCode() {
+		return this.bredCode;
+	}
+
+	/**
+	 * @param bredCode the bredCode to set
+	 */
+	public void setBredCode(String bredCode) {
+		this.bredCode = bredCode;
+	}
+
+	/**
+	 * @return the sampStat
+	 */
+	public Integer getSampStat() {
+		return this.sampStat;
+	}
+
+	/**
+	 * @param sampStat the sampStat to set
+	 */
+	public void setSampStat(Integer sampStat) {
+		this.sampStat = sampStat;
+	}
+
+	/**
+	 * @return the ancest
+	 */
+	public String getAncest() {
+		return this.ancest;
+	}
+
+	/**
+	 * @param ancest the ancest to set
+	 */
+	public void setAncest(String ancest) {
+		this.ancest = ancest;
+	}
+
+	/**
+	 * @return the collSrc
+	 */
+	public Integer getCollSrc() {
+		return this.collSrc;
+	}
+
+	/**
+	 * @param collSrc the collSrc to set
+	 */
+	public void setCollSrc(Integer collSrc) {
+		this.collSrc = collSrc;
+	}
+
+	/**
+	 * @return the remarks
+	 */
+	@Column(length = 2000)
+	public String getRemarks() {
+		return this.remarks;
+	}
+
+	/**
+	 * @param remarks the remarks to set
+	 */
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
+	}
+
+	// IITA
+
+	/**
+	 * Is FAO in Trust
+	 * 
+	 * @return the inTrust
+	 */
+	public Boolean getInTrust() {
+		return this.inTrust;
+	}
+
+	/**
+	 * @param inTrust the inTrust to set
+	 */
+	public void setInTrust(Boolean inTrust) {
+		this.inTrust = inTrust;
+	}
+
+	/**
+	 * Is part of core collection
+	 * 
+	 * @return the core
+	 */
+	public Boolean getCore() {
+		return this.core;
+	}
+
+	/**
+	 * @param core the core to set
+	 */
+	public void setCore(Boolean core) {
+		this.core = core;
+	}
+
+	/**
+	 * Is listed on Annex1
+	 * 
+	 * @return the annex1
+	 */
+	public Boolean getAnnex1() {
+		return this.annex1;
+	}
+
+	/**
+	 * @param annex1 the annex1 to set
+	 */
+	public void setAnnex1(Boolean annex1) {
+		this.annex1 = annex1;
+	}
+
+	/**
+	 * Get SINGER taxonomy number
+	 * 
+	 * @return
+	 */
+	public Integer getSingerTaxonomy() {
+		return singerTaxonomy;
+	}
+
+	public void setSingerTaxonomy(Integer singerTaxonomy) {
+		this.singerTaxonomy = singerTaxonomy;
+	}
+
+	/**
+	 * @return the cultivarName
+	 */
+	public String getCultivarName() {
+		return this.cultivarName;
+	}
+
+	/**
+	 * @param cultivarName the cultivarName to set
+	 */
+	public void setCultivarName(String cultivarName) {
+		this.cultivarName = cultivarName;
+	}
+
+	/**
+	 * Get Frequency at collecting site
+	 * 
+	 * @return
+	 */
+	public Integer getFrequency() {
+		return frequency;
+	}
+
+	public void setFrequency(Integer frequency) {
+		this.frequency = frequency;
+	}
+
+	@Column(length = 200)
+	public String getDonorCode() {
+		return donorCode;
+	}
+
+	public void setDonorCode(String donorCode) {
+		this.donorCode = donorCode;
+	}
+
+	@Column(length = 200)
+	public String getDonorName() {
+		return donorName;
+	}
+
+	public void setDonorName(String donorName) {
+		this.donorName = donorName;
+	}
+
+	/**
+	 * @return the experiments
+	 */
+	@ManyToMany(cascade = {}, fetch = FetchType.LAZY)
+	@JoinTable(name = "AccessionExperiment")
+	public List<Experiment> getExperiments() {
+		return this.experiments;
+	}
+
+	/**
+	 * @param experiments the experiments to set
+	 */
+	public void setExperiments(List<Experiment> experiments) {
+		this.experiments = experiments;
+	}
+
+	/**
+	 * Get alternative accession names
+	 * 
+	 * @return
+	 */
+	@OneToMany(cascade = { CascadeType.ALL }, mappedBy = "accession")
+	public List<AccessionName> getNames() {
+		return this.names;
+	}
+
+	/**
+	 * @param names the names to set
+	 */
+	public void setNames(List<AccessionName> names) {
+		this.names = names;
+	}
+
+	/**
+	 * @return the available
+	 */
+	public Boolean getAvailable() {
+		return this.available;
+	}
+
+	/**
+	 * @param available the available to set
+	 */
+	public void setAvailable(Boolean available) {
+		this.available = available;
+	}
+
+	/**
+	 * @return the grinTaxonomy
+	 */
+	@Column(length = 50)
+	public String getGrinTaxonomy() {
+		return this.grinTaxonomy;
+	}
+
+	/**
+	 * @param grinTaxonomy the grinTaxonomy to set
+	 */
+	public void setGrinTaxonomy(String grinTaxonomy) {
+		this.grinTaxonomy = grinTaxonomy;
+	}
+}

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util" xmlns:amq="http://activemq.apache.org/schema/core"
+	xsi:schemaLocation="
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+    http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+    http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.0.xsd
+    http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd
+    http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd 
+    ">
+
+	<!-- Value stack interceptor -->
+	<bean id="valueStackInterceptor" scope="singleton" class="org.iita.struts.interceptor.ValueStackInterceptor">
+		<property name="stackers">
+			<map>
+				<entry key="accessionsUtil">
+					<bean class="org.iita.accessions2.util.AccessionsUtil">
+						<constructor-arg ref="experimentService" />
+						<constructor-arg ref="filterService" />
+					</bean>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+	<!-- Services -->
+	<bean id="accessionService" class="org.iita.accessions2.service.AccessionServiceImpl">
+		<property name="accessionImageDirectory" value="${application.dataDir}/accessions/" />
+	</bean>
+	<bean id="databaseService" class="org.iita.accessions2.service.DatabaseServiceImpl">
+		<constructor-arg ref="dataSource" />
+	</bean>
+	<bean id="experimentService" class="org.iita.accessions2.service.ExperimentServiceImpl">
+		<property name="databaseService" ref="databaseService" />
+		<property name="descriptorImageDirectory" value="${application.dataDir}/descriptors/" />
+	</bean>
+	<bean id="singerService" class="org.iita.accessions2.service.SingerExportServiceImpl">
+		<constructor-arg ref="experimentService" />
+	</bean>
+	<bean id="selectionService" class="org.iita.accessions2.service.SelectionServiceImpl" />
+	<bean id="collectionService" class="org.iita.accessions2.service.CollectionServiceImpl">
+		<property name="experimentService" ref="experimentService" />
+		<property name="accessionImageDirectory" value="${application.dataDir}/accessions/" />
+	</bean>
+	
+	<!-- JMS settings -->
+	<amq:queue id="jmsOrderDestination" physicalName="${genebank.order.jms.destination}" />
+	<amq:queue id="jmsOrderUpdates" physicalName="${genebank.order.jms.updates}" />
+	
+	
+	<bean id="orderService" class="org.iita.accessions2.service.GenebankOrderService">
+		<property name="emailService" ref="emailService" />
+		<property name="templatingService" ref="templatingService" />
+		<property name="template">
+			<bean class="org.springframework.jms.core.JmsTemplate">
+				<property name="connectionFactory" ref="jmsConnectionFactory" />
+			</bean>
+		</property>
+		<property name="destination" ref="jmsOrderDestination" />
+		<property name="replyTo" ref="jmsOrderUpdates" />
+	</bean>
+	<bean id="filterService" class="org.iita.accessions2.service.FilterServiceImpl" />
+
+	<!-- Actions -->
+	<bean id="experimentAction" class="org.iita.accessions2.action.admin.ExperimentAction" scope="request">
+		<constructor-arg ref="experimentService" />
+	</bean>
+	<bean id="experimentDataAction" class="org.iita.accessions2.action.admin.ExperimentDataAction" scope="request">
+		<constructor-arg ref="experimentService" />
+	</bean>
+	<bean id="columnDescriptionAction" class="org.iita.accessions2.action.admin.ColumnDescriptionAction" scope="request">
+		<constructor-arg ref="experimentService" />
+	</bean>
+	<bean id="collectionActionAdmin" class="org.iita.accessions2.action.admin.CollectionAction" scope="request">
+		<constructor-arg ref="collectionService" />
+	</bean>
+
+	<!-- Public actions -->
+	<bean id="dashboardAction" class="org.iita.accessions2.action.DashboardAction" scope="request">
+		<constructor-arg ref="collectionService" />
+	</bean>
+	<bean id="viewAccessionAction" class="org.iita.accessions2.action.AccessionProfileAction" scope="request">
+		<constructor-arg ref="accessionService" />
+		<constructor-arg ref="experimentService" />
+		<constructor-arg ref="selectionService" />
+	</bean>
+	<bean id="accessionEditAction" class="org.iita.accessions2.action.AccessionEditAction" scope="request">
+		<constructor-arg ref="experimentService" />
+	</bean>
+	<bean id="browseAction" class="org.iita.accessions2.action.Browse2Action" scope="request">
+		<constructor-arg ref="accessionService" />
+		<constructor-arg ref="experimentService" />
+		<constructor-arg ref="selectionService" />
+		<constructor-arg ref="filterService" />
+		<constructor-arg ref="singerService" />
+	</bean>
+	<bean id="selectionAction" class="org.iita.accessions2.action.SelectionAction" scope="request">
+		<constructor-arg ref="accessionService" />
+		<constructor-arg ref="experimentService" />
+		<constructor-arg ref="selectionService" />
+	</bean>
+	<bean id="accessionSearchAction" class="org.iita.accessions2.action.AccessionSearchAction" scope="request">
+		<constructor-arg ref="searchService" />
+		<constructor-arg ref="selectionService" />
+	</bean>
+	<bean id="exportAction" class="org.iita.accessions2.action.ExportAction" scope="request">
+		<constructor-arg ref="experimentService" />
+		<constructor-arg ref="selectionService" />
+	</bean>
+	<bean id="collectionAction" class="org.iita.accessions2.action.CollectionAction" scope="request">
+		<constructor-arg ref="collectionService" />
+	</bean>
+	<bean id="collectionFilterAction" class="org.iita.accessions2.action.CollectionFilterAction" scope="request">
+		<constructor-arg ref="collectionService" />
+		<constructor-arg ref="accessionService" />
+		<constructor-arg ref="filterService" />
+		<constructor-arg ref="experimentService" />
+	</bean>
+	<bean id="filterAction" class="org.iita.accessions2.action.FilterAction" scope="request">
+		<constructor-arg ref="filterService" />
+		<constructor-arg ref="experimentService" />
+	</bean>
+	<bean id="experimentProfileAction" class="org.iita.accessions2.action.ExperimentProfileAction" scope="request">
+		<constructor-arg ref="experimentService" />
+	</bean>
+
+	<!-- Ordering -->
+	<bean id="orderCreateAction" class="org.iita.accessions2.action.OrderCreateAction" scope="request">
+		<constructor-arg ref="selectionService" />
+		<constructor-arg ref="orderService" />
+		<property name="captchaService" ref="captchaService" />
+	</bean>
+	<bean id="orderValidateAction" class="org.iita.accessions2.action.OrderValidateAction" scope="request">
+		<constructor-arg ref="orderService" />
+	</bean>
+	<bean id="orderListAction" class="org.iita.accessions2.action.admin.OrderListAction" scope="request">
+		<constructor-arg ref="orderService" />
+	</bean>
+	<bean id="orderAction" class="org.iita.accessions2.action.admin.OrderAction" scope="request">
+		<constructor-arg ref="orderService" />
+	</bean>
+	
+	<bean id="accessionImagesAction" class="org.iita.accessions2.action.FileAccessAction" scope="request">
+		<property name="rootDirectory" value="${application.dataDir}/accessions/" />
+	</bean>
+	<bean id="descriptorImagesAction" class="org.iita.accessions2.action.FileAccessAction" scope="request">
+		<property name="rootDirectory" value="${application.dataDir}/descriptors/" />
+	</bean>
+	
+	<bean id="collectionGalleryAction" class="org.iita.accessions2.action.CollectionGalleryAction" scope="request">
+		<constructor-arg ref="collectionService" />
+	</bean>
+
+	<!-- Ajax -->
+	<bean id="publicAjaxService" class="org.iita.accessions2.action.ajax.PublicAjaxAction" scope="request">
+		<constructor-arg ref="selectionService" />
+	</bean>
+</beans>

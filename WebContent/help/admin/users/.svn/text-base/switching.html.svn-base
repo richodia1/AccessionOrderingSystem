@@ -1,0 +1,26 @@
+<html>
+<head>
+<title>Impersonation</title>
+</head>
+<body>
+<div id="user-switching">
+<h1>Switching to another user</h1>
+<p>The application allows Administrators to <b>switch</b> or <b>impersonate</b> any user in the system. Impersonating will replace your current
+Administrator credentials with ones of selected user (including all their roles).</p>
+<p>There are several ways to initiate impersonation:</p>
+<ul>
+	<li>From user listing</li>
+	<li>User properties page</li>
+	<li>Fast switch tool top right:
+	<div id="assmem_username">
+	<p>Start typing user's last name or first name. After list is loaded from server, select user from list and press &lt;Enter&gt; key.</p>
+	</div>
+	</li>
+</ul>
+<p class="help-img"><img src="../img/user-switched.png" /> Information on switched user displayed in title bar</p>
+<p>Please note that any changes made to the data will record the createdBy or lastModified properties of records as <b>User/Impersonator</b> (e.g. <code>MObreza/Administrator</code>
+where user Administrator is impersonating user MObreza).</p>
+
+</div>
+</body>
+</html>

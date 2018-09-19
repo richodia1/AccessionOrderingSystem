@@ -1,0 +1,16 @@
+<html>
+<head>
+<title>Help for IITA Accessions Database</title>
+</head>
+<body>
+<h1>Welcome to IITA Accessions Database</h1>
+
+<div class="actionMessage">Please help us improve Accessions DB documentation by sending content or ideas to <a
+	href="mailto:software.support@iita.org?subject=Accessions DB Help">Software Development Service team</a>.</div>
+
+<h2>Table of Contents</h2>
+<ul>
+	<li><a href="accession/copyright.html">Copyright and fair use</a></li>
+</ul>
+</body>
+</html>

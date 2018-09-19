@@ -1,0 +1,8 @@
+java.util.Date = org.iita.struts.DateConverter
+java.util.Calendar = org.iita.struts.CalendarConverter
+java.lang.Boolean = org.iita.struts.BooleanConverter
+org.iita.security.model.UserStatus=com.opensymphony.xwork2.util.EnumTypeConverter
+org.iita.security.model.UserNotification$NotificationFrequency=com.opensymphony.xwork2.util.EnumTypeConverter
+org.iita.security.model.UserNotification$NotificationPriority=com.opensymphony.xwork2.util.EnumTypeConverter
+
+org.iita.accessions2.model.ColumnType=com.opensymphony.xwork2.util.EnumTypeConverter

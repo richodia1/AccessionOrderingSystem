@@ -1,0 +1,34 @@
+<html>
+<head>
+<title>Admin Help</title>
+<script type="text/javascript" src="../script/help.js"></script>
+</head>
+<body>
+<h1>Welcome to Administrator's help!</h1>
+
+<div class="actionMessage">Please help us improve Administration documentation by sending content or ideas to <a
+	href="mailto:software.support@iita.org?subject=Administration Help">Software Development Service team</a>.</div>
+
+
+<h2>Table of Contents</h2>
+<ul>
+	<li><a href="navigation.html">Navigating Administrative console</a></li>
+	<li><a href="users/index.html">User management</a>
+	<ul>
+		<li><a href="users/user.html">User properties</a></li>
+		<li><a href="users/switching.html">Impersonating users</a></li>
+	</ul>
+	<li>Tools
+	<ul>
+		<li><a href="tools/block-access.html">Blocking access to application</a></li>
+		<li><a href="tools/jre-status.html">JRE status</a></li>
+		<li><a href="tools/log.html">Log management</a></li>
+		<li><a href="tools/schema.html">Schema</a></li>
+		<li><a href="tools/lucene.html">Indexing data</a></li>
+		<li><a href="tools/scheduler.html">Scheduled jobs</a></li>
+		<li><a href="tools/browser.html">Browsing server files</a></li>
+	</ul>
+	</li>
+</ul>
+</body>
+</html>

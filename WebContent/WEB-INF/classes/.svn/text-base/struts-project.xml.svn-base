@@ -1,0 +1,177 @@
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+<struts>
+	<!-- Project specific actions -->
+	<package name="project-default" extends="public">
+	<interceptors>
+			<interceptor name="valueStackInterceptor" class="valueStackInterceptor" />
+
+			<!-- Copied from struts-default.xml and changed validation exclude methods -->
+			<interceptor-stack name="accessionsStack">
+				<interceptor-ref name="exception" />
+				<interceptor-ref name="alias" />
+				<interceptor-ref name="timeZone" />
+				<!-- Strict parameters interceptor -->
+				<interceptor-ref name="regexpParams" />
+				<interceptor-ref name="servletConfig" />
+				<interceptor-ref name="prepare" />
+				<interceptor-ref name="i18n" />
+				<interceptor-ref name="chain" />
+				<!-- Application locking -->
+				<interceptor-ref name="applock" />
+				<interceptor-ref name="modelDriven" />
+				<interceptor-ref name="fileUpload" />
+				<interceptor-ref name="gearsUpload" />
+				<interceptor-ref name="checkbox" />
+				<interceptor-ref name="staticParams" />
+				<interceptor-ref name="regexpParams" />
+				<interceptor-ref name="conversionError" />
+				<interceptor-ref name="validation">
+					<param name="validateAnnotatedMethodOnly">true</param>
+					<param name="excludeMethods">cancel,execute,delete,edit,list</param>
+				</interceptor-ref>
+				<interceptor-ref name="workflow">
+					<param name="excludeMethods">input,back,cancel</param>
+				</interceptor-ref>
+				<interceptor-ref name="valueStackInterceptor" />
+			</interceptor-stack>
+		</interceptors>
+		<default-interceptor-ref name="accessionsStack" />
+		
+		<action name="index" class="dashboardAction">
+			<result>/WEB-INF/jsp/index.jsp</result>
+		</action>
+		<action name="browse" class="browseAction">
+			<result>/WEB-INF/jsp/browse/browse.jsp</result>
+		</action>
+		<action name="accession" class="viewAccessionAction">
+			<result>/WEB-INF/jsp/accession/profile.jsp</result>
+		</action>
+		<action name="edit" class="accessionEditAction">
+			<result>/WEB-INF/jsp/accession/edit.jsp</result>
+			<result name="experiment">/WEB-INF/jsp/accession/pick-experiment.jsp</result>
+			<result name="reload" type="redirect-action">edit?id=${accession.id}&amp;experimentId=${experiment.id}</result>
+			<result name="profile" type="redirect-action">accession?id=${accession.id}</result>
+		</action>
+		<action name="selection" class="selectionAction">
+			<result>/WEB-INF/jsp/selection/list.jsp</result>
+			<result name="reload" type="redirect-action">selection</result>
+		</action>
+		<action name="collection" class="collectionAction">
+			<result>/WEB-INF/jsp/collection/profile.jsp</result>
+		</action>
+		<action name="collection/filter" class="collectionFilterAction">
+			<result>/WEB-INF/jsp/collection/filter.jsp</result>
+			<result name="refresh" type="redirect-action">collection/filter?id=${collection.id}&amp;col=${selectedColumn.id}</result>
+		</action>
+
+		<action name="descriptors" class="experimentProfileAction">
+			<result>/WEB-INF/jsp/experiment/descriptors.jsp</result>
+		</action>
+
+		<action name="gallery" class="collectionGalleryAction">
+			<result>/WEB-INF/jsp/collection/gallery.jsp</result>
+		</action>
+
+		<action name="export" class="exportAction">
+			<result name="success" type="stream">
+				<param name="contentType">application/x-binary</param>
+				<param name="inputName">downloadStream</param>
+				<param name="contentDisposition">inline;filename="${downloadFileName}"</param>
+				<param name="contentLength">${downloadSize}</param>
+				<param name="bufferSize">1024</param>
+			</result>
+		</action>
+		<action name="accession-image" class="accessionImagesAction">
+			<!-- default results apply -->	
+		</action>
+		<action name="descriptor-image" class="descriptorImagesAction">
+			<!-- default results apply -->	
+		</action>
+		
+		<action name="filter" class="filterAction">
+			<result>/WEB-INF/jsp/filter/filter.jsp</result>
+			<result name="browse" type="redirect-action">browse</result>
+			<result name="refresh" type="redirect-action">filter?experiment=${experiment}&amp;field=${field}</result>
+		</action>
+
+		<action name="search" class="accessionSearchAction">
+			<result>/WEB-INF/jsp/browse/search.jsp</result>
+			<result name="single" type="redirect-action">accession?id=${paged.results[0].id}</result>
+		</action>
+
+		<action name="order" class="orderCreateAction">
+			<result>/WEB-INF/jsp/order/order-form.jsp</result>
+			<result name="input">/WEB-INF/jsp/order/order-form.jsp</result>
+			<result name="smta">/WEB-INF/jsp/order/smta.jsp</result>
+			<result name="reload" type="redirect-action">order</result>
+			<result name="finished">/WEB-INF/jsp/order/finished.jsp</result>
+		</action>
+		<action name="validate" class="orderValidateAction">
+			<result>/WEB-INF/jsp/order/order-validation.jsp</result>
+			<result name="error">/WEB-INF/jsp/order/order-validation.jsp</result>
+		</action>
+	</package>
+
+	<package name="project-admin" extends="admin" namespace="/admin">
+		<action name="experiment/index" class="experimentAction">
+			<result>/WEB-INF/jsp/experiment/list.jsp</result>
+		</action>
+		<action name="experiment/profile" class="experimentAction" method="profile">
+			<result>/WEB-INF/jsp/experiment/profile.jsp</result>
+			<result name="refresh" type="redirect-action">experiment/profile?id=${experiment.id}</result>
+			<result name="go-list" type="redirect-action">experiment/index</result>
+		</action>
+		<action name="experiment/column" class="columnDescriptionAction">
+			<result name="input">/WEB-INF/jsp/experiment/column.jsp</result>
+			<result name="refresh" type="redirect-action">experiment/column?id=${column.id}</result>
+			<result name="success" type="redirect-action">experiment/profile?id=${column.experiment.id}</result>
+		</action>
+		<action name="experiment/sort" class="experimentAction" method="profile">
+			<result name="success">/WEB-INF/jsp/experiment/sort.jsp</result>
+			<result name="refresh" type="redirect-action">experiment/sort?id=${experiment.id}</result>
+		</action>
+		<action name="experiment/data" class="experimentAction" method="viewData">
+			<result>/WEB-INF/jsp/experiment/data.jsp</result>
+		</action>
+		<action name="experiment/upload" class="experimentDataAction">
+			<result>/WEB-INF/jsp/upload/start.jsp</result>
+			<result name="go-mapping" type="redirect-action">experiment/upload!mapping?experimentId=${experiment.id}</result>
+			<result name="go-define" type="redirect-action">experiment/upload!define?experimentId=${experiment.id}</result>
+			<result name="go-preview" type="redirect-action">experiment/upload!preview?experimentId=${experiment.id}</result>
+			<result name="mapping">/WEB-INF/jsp/upload/mapping.jsp</result>
+			<result name="define">/WEB-INF/jsp/upload/define.jsp</result>
+			<result name="preview">/WEB-INF/jsp/upload/preview.jsp</result>
+			<result name="done" type="redirect-action">experiment/index</result>
+		</action>
+
+		<!-- Collection -->
+		<action name="collection/index" class="collectionActionAdmin">
+			<result>/WEB-INF/jsp/collection/list.jsp</result>
+		</action>
+		<action name="collection/profile" class="collectionActionAdmin" method="profile">
+			<result name="input">/WEB-INF/jsp/collection/admin-profile.jsp</result>
+			<result name="refresh" type="redirect-action">collection/profile?id=${collection.id}</result>
+			<result name="success" type="redirect-action">collection/index</result>
+		</action>
+		
+		<!-- ORDER -->
+		<action name="order/index" class="orderListAction">
+			<result>/WEB-INF/jsp/order/admin/list.jsp</result>
+		</action>
+		<action name="order/edit" class="orderAction">
+			<result>/WEB-INF/jsp/order/admin/order-form.jsp</result>
+			<result name="refresh" type="redirect-action">order/edit?id=${order.id}</result>
+		</action>
+	</package>
+
+	<!-- Ajax actions -->
+	<package name="ajax-project" extends="public-ajax" namespace="/ajax">
+		<action name="service" class="publicAjaxService">
+			<result type="json">
+				<param name="enableSMD">true</param>
+			</result>
+		</action>
+	</package>
+</struts>
